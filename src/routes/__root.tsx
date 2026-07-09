@@ -78,20 +78,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "More LifeOS — FinanceOS" },
+      { title: "FinanceOS — Your Personal Financial Command Center" },
       {
         name: "description",
         content:
-          "A personal financial operating system. Understand your reality, make better decisions, build long-term wealth.",
+          "A personal financial operating system that helps you understand, decide, and build long-term wealth with clarity.",
       },
       { name: "author", content: "More LifeOS" },
-      { property: "og:title", content: "More LifeOS — FinanceOS" },
+      { property: "og:title", content: "FinanceOS — Your Personal Financial Command Center" },
       {
         property: "og:description",
-        content: "Build for decisions, not data. Your personal CFO.",
+        content: "A personal financial operating system that helps you understand, decide, and build long-term wealth with clarity.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "FinanceOS — Your Personal Financial Command Center" },
+      { name: "twitter:description", content: "A personal financial operating system that helps you understand, decide, and build long-term wealth with clarity." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fb3f8847-5bfa-4a78-afdf-ff945897f334/id-preview-34bc2de9--7e93b13e-f4c2-4576-9ef5-7e92116bca0f.lovable.app-1783600171781.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fb3f8847-5bfa-4a78-afdf-ff945897f334/id-preview-34bc2de9--7e93b13e-f4c2-4576-9ef5-7e92116bca0f.lovable.app-1783600171781.png" },
     ],
     links: [
       {

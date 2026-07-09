@@ -16,10 +16,10 @@ export const Route = createFileRoute("/")({
         content:
           "A personal financial operating system that helps you understand, decide, and build long-term wealth with clarity.",
       },
-      { property: "og:title", content: "FinanceOS — More LifeOS" },
+      { property: "og:title", content: "FinanceOS — Your Personal Financial Command Center" },
       {
         property: "og:description",
-        content: "Build for decisions, not data. Your personal CFO.",
+        content: "A personal financial operating system that helps you understand, decide, and build long-term wealth with clarity.",
       },
     ],
   }),
