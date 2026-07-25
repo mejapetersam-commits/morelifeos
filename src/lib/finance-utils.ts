@@ -1,4 +1,44 @@
-import type { FinanceState, Transaction } from "./finance-types";
+import type { FinanceState, Goal, Transaction } from "./finance-types";
+
+export function greeting(now = new Date()) {
+  const h = now.getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+export function pct(now: number, prev: number) {
+  if (prev === 0) return now === 0 ? 0 : 1;
+  return (now - prev) / Math.abs(prev);
+}
+
+export function formatPct(v: number, digits = 1) {
+  const s = v >= 0 ? "+" : "−";
+  return `${s}${(Math.abs(v) * 100).toFixed(digits)}%`;
+}
+
+export function goalEta(g: Goal, monthlyContribution: number) {
+  const remaining = Math.max(0, g.target - g.saved);
+  if (remaining === 0) return { months: 0, date: new Date() };
+  if (monthlyContribution <= 0) return { months: Infinity, date: null };
+  const months = Math.ceil(remaining / monthlyContribution);
+  const d = new Date();
+  d.setMonth(d.getMonth() + months);
+  return { months, date: d };
+}
+
+export function healthScore(m: FinanceMetrics, hasGoals: boolean) {
+  let s = 40;
+  if (m.savingsRate >= 0.2) s += 25;
+  else if (m.savingsRate >= 0.1) s += 15;
+  else if (m.savingsRate > 0) s += 8;
+  if (m.availableCash > m.monthExpenses * 3) s += 20;
+  else if (m.availableCash > m.monthExpenses) s += 10;
+  if (m.monthIncome > m.monthExpenses) s += 10;
+  if (hasGoals) s += 5;
+  return Math.max(0, Math.min(100, s));
+}
+
 
 export function formatMoney(amount: number, currency = "KSh") {
   const sign = amount < 0 ? "-" : "";

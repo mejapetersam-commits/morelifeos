@@ -41,8 +41,14 @@
   --color-ocean-foreground: var(--ocean-foreground);
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
+  --color-emerald: var(--emerald);
+  --color-coral: var(--coral);
+  --color-royal: var(--royal);
+  --color-amber: var(--amber);
+  --color-indigo: var(--indigo);
   --shadow-soft: 0 1px 2px oklch(0.2 0.05 250 / 0.04), 0 8px 24px oklch(0.2 0.05 250 / 0.06);
   --shadow-lift: 0 2px 6px oklch(0.2 0.05 250 / 0.05), 0 20px 40px oklch(0.2 0.05 250 / 0.08);
+  --shadow-hero: 0 1px 1px oklch(0.2 0.05 250 / 0.03), 0 30px 60px -20px oklch(0.22 0.06 255 / 0.14);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -75,9 +81,19 @@
   /* Warm Gold #C9A227 */
   --gold: oklch(0.74 0.13 85);
   --gold-foreground: oklch(0.22 0.05 255);
-  /* Sage Green #7FAE8A */
+  /* Sage Green #7FAE8A — savings */
   --sage: oklch(0.73 0.07 150);
   --sage-foreground: oklch(0.22 0.05 255);
+  /* Emerald — investments */
+  --emerald: oklch(0.62 0.13 155);
+  /* Muted Coral — expenses */
+  --coral: oklch(0.7 0.11 30);
+  /* Royal Blue — goals */
+  --royal: oklch(0.5 0.15 260);
+  /* Amber — debt */
+  --amber: oklch(0.78 0.14 70);
+  /* Indigo — financial intelligence */
+  --indigo: oklch(0.5 0.14 285);
   --destructive: oklch(0.6 0.2 25);
   --destructive-foreground: oklch(0.98 0.008 90);
   --border: oklch(0.9 0.01 90);
@@ -86,8 +102,8 @@
   --chart-1: oklch(0.22 0.05 255);
   --chart-2: oklch(0.74 0.13 85);
   --chart-3: oklch(0.73 0.07 150);
-  --chart-4: oklch(0.5 0.08 255);
-  --chart-5: oklch(0.65 0.1 40);
+  --chart-4: oklch(0.5 0.15 260);
+  --chart-5: oklch(0.7 0.11 30);
 }
 
 @layer base {
