@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { useFinance } from "@/lib/finance-store";
+import { useSession } from "@/lib/auth-client";
 import {
   computeMetrics,
   formatMoney,
@@ -63,6 +64,8 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const { state } = useFinance();
+  const { data: session } = useSession();
+  const firstName = session?.user?.name?.split(" ")[0];
   const m = computeMetrics(state);
   const insights = generateInsights(state, m);
   const series = monthlySeries(state.transactions, 6);
@@ -93,7 +96,7 @@ function Home() {
   // Recent activity
   const recent = state.transactions.slice(0, 5);
 
-  // Upcoming bills — heuristic: last month expenses of Housing/Fixed-like categories
+  // Upcoming bills — sourced from real recurring transactions (Money > Recurring)
   const bills = deriveUpcomingBills(state);
 
   const topGoal = state.goals[0];
@@ -131,8 +134,7 @@ function Home() {
               })}
             </div>
             <h1 className="mt-4 max-w-2xl font-display text-3xl font-semibold leading-[1.15] tracking-tight md:text-[42px]">
-              {greeting()}
-              {state.profile.vision.length > 0 ? "." : "."}
+              {greeting(new Date(), firstName)}.
               <br />
               <span className="text-ocean-foreground/80">{hero.headline}</span>
             </h1>
@@ -510,13 +512,17 @@ function Home() {
                 </div>
                 <h3 className="mt-1 font-display text-xl font-semibold">Coming up</h3>
               </div>
+              <Link to="/money" className="text-xs font-medium text-ocean hover:opacity-80">
+                Manage →
+              </Link>
             </div>
             <div className="mt-5 space-y-3">
               {bills.length === 0 ? (
                 <EmptyState
                   icon={CalendarClock}
                   title="Nothing pending."
-                  body="Recurring expenses will appear here so you're never caught by surprise."
+                  body="Add a recurring expense on the Money page and it'll appear here automatically."
+                  cta={{ to: "/money", label: "Add recurring expense" }}
                 />
               ) : (
                 bills.map((b) => <BillRow key={b.id} bill={b} currency={currency} />)
@@ -682,37 +688,28 @@ interface Bill {
   status: "upcoming" | "soon" | "overdue";
 }
 
+/**
+ * Upcoming bills, sourced from real recurring transactions set up on the
+ * Money > Recurring tab (frequency, nextDate, active) — no pattern-guessing.
+ */
 function deriveUpcomingBills(state: ReturnType<typeof useFinance>["state"]): Bill[] {
-  const map = new Map<string, { total: number; count: number; lastDate: Date }>();
-  for (const t of state.transactions) {
-    if (t.type !== "expense") continue;
-    const key = (t.description?.trim() || t.category || "").toLowerCase();
-    if (!key) continue;
-    const d = new Date(t.date);
-    const cur = map.get(key);
-    if (cur) {
-      cur.total += t.amount;
-      cur.count += 1;
-      if (d > cur.lastDate) cur.lastDate = d;
-    } else {
-      map.set(key, { total: t.amount, count: 1, lastDate: d });
-    }
-  }
-  const recurring: Bill[] = [];
-  for (const [name, v] of map) {
-    if (v.count < 2) continue;
-    const next = new Date(v.lastDate);
-    next.setMonth(next.getMonth() + 1);
-    const days = (next.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-    recurring.push({
-      id: name,
-      name: name.charAt(0).toUpperCase() + name.slice(1),
-      amount: v.total / v.count,
-      due: next,
-      status: days < 0 ? "overdue" : days <= 5 ? "soon" : "upcoming",
-    });
-  }
-  return recurring.sort((a, b) => a.due.getTime() - b.due.getTime()).slice(0, 4);
+  const now = Date.now();
+  return state.recurring
+    .filter((r) => r.active && r.type === "expense")
+    .map((r) => {
+      const due = new Date(r.nextDate);
+      const days = (due.getTime() - now) / (1000 * 60 * 60 * 24);
+      const status: Bill["status"] = days < 0 ? "overdue" : days <= 5 ? "soon" : "upcoming";
+      return {
+        id: r.id,
+        name: r.description || r.category,
+        amount: r.amount,
+        due,
+        status,
+      };
+    })
+    .sort((a, b) => a.due.getTime() - b.due.getTime())
+    .slice(0, 4);
 }
 
 function BillRow({ bill, currency }: { bill: Bill; currency: string }) {
