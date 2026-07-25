@@ -1,9 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { SectionHeader } from "@/components/finance-cards";
 import { useFinance } from "@/lib/finance-store";
 import { useTheme, type Theme } from "@/lib/theme";
+import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -98,6 +99,9 @@ function SettingsPage() {
       <SectionHeader title="Settings" description="Appearance and your data." />
 
       <div className="space-y-6">
+        {/* Account */}
+        <AccountSection />
+
         {/* Appearance */}
         <section className="rounded-2xl bg-surface-elevated p-6 shadow-soft">
           <h2 className="font-display text-base font-semibold">Appearance</h2>
@@ -174,5 +178,47 @@ function SettingsPage() {
         </AlertDialogContent>
       </AlertDialog>
     </AppShell>
+  );
+}
+
+function AccountSection() {
+  const { data: session } = useSession();
+  const { syncStatus } = useFinance();
+
+  if (!session) {
+    return (
+      <section className="rounded-2xl bg-surface-elevated p-6 shadow-soft">
+        <h2 className="font-display text-base font-semibold">Account</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          You're using FinanceOS without an account — your data stays only in this browser. Log in
+          to sync it across every device.
+        </p>
+        <Link
+          to="/login"
+          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-ocean px-4 py-2 text-sm font-medium text-ocean-foreground hover:bg-ocean/90"
+        >
+          Log in or create an account
+        </Link>
+      </section>
+    );
+  }
+
+  return (
+    <section className="rounded-2xl bg-surface-elevated p-6 shadow-soft">
+      <h2 className="font-display text-base font-semibold">Account</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Logged in as <span className="font-medium text-foreground">{session.user.email}</span>. Your
+        data syncs to the cloud —{" "}
+        {syncStatus === "syncing"
+          ? "syncing now"
+          : syncStatus === "error"
+            ? "sync error"
+            : "up to date"}
+        .
+      </p>
+      <Button variant="outline" className="mt-4" onClick={() => signOut()}>
+        Log out
+      </Button>
+    </section>
   );
 }

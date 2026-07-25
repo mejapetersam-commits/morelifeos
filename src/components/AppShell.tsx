@@ -10,11 +10,16 @@ import {
   Settings,
   Sun,
   Moon,
+  LogIn,
+  Cloud,
+  CloudOff,
+  Loader2,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useFinance } from "@/lib/finance-store";
 import { computeMetrics } from "@/lib/finance-utils";
 import { useTheme } from "@/lib/theme";
+import { useSession, signOut } from "@/lib/auth-client";
 
 const nav = [
   { to: "/", label: "Overview", icon: Home },
@@ -37,6 +42,50 @@ function QuickThemeToggle() {
       {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
       {isDark ? "Light mode" : "Dark mode"}
     </button>
+  );
+}
+
+function AccountStatus() {
+  const { data: session } = useSession();
+  const { syncStatus } = useFinance();
+
+  if (!session) {
+    return (
+      <Link
+        to="/login"
+        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-foreground/65 transition-colors hover:bg-accent hover:text-foreground"
+      >
+        <LogIn className="h-4 w-4" />
+        Log in to sync
+      </Link>
+    );
+  }
+
+  const syncIcon =
+    syncStatus === "syncing" ? (
+      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+    ) : syncStatus === "error" ? (
+      <CloudOff className="h-3.5 w-3.5 text-coral" />
+    ) : (
+      <Cloud className="h-3.5 w-3.5 text-sage" />
+    );
+
+  return (
+    <div className="flex items-center justify-between rounded-xl px-3 py-2">
+      <div className="min-w-0">
+        <div className="truncate text-[13px] font-medium">{session.user.email}</div>
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          {syncIcon}
+          {syncStatus === "syncing" ? "Syncing…" : syncStatus === "error" ? "Sync error" : "Synced"}
+        </div>
+      </div>
+      <button
+        onClick={() => signOut()}
+        className="shrink-0 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+      >
+        Log out
+      </button>
+    </div>
   );
 }
 
@@ -128,6 +177,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
 
         <div className="mt-auto flex flex-col gap-1 px-2 pt-6">
+          <AccountStatus />
           <QuickThemeToggle />
           <div className="px-1 pt-2 text-[11px] leading-relaxed text-muted-foreground">
             Build for decisions, not data.

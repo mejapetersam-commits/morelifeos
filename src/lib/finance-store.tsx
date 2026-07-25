@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import type {
   Account,
   Budget,
@@ -9,6 +17,7 @@ import type {
   Review,
   Transaction,
 } from "./finance-types";
+import { useSession } from "./auth-client";
 
 const STORAGE_KEY = "financeos:v1";
 
@@ -54,6 +63,8 @@ interface Ctx {
   removeRecurring: (id: string) => void;
   reset: () => void;
   replaceState: (next: FinanceState) => void;
+  /** "local" until logged in; reflects cloud sync progress once a session exists. */
+  syncStatus: "local" | "syncing" | "synced" | "error";
 }
 
 const FinanceContext = createContext<Ctx | null>(null);
@@ -144,6 +155,11 @@ function processDueRecurring(state: FinanceState): FinanceState {
 export function FinanceProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<FinanceState>(defaultState);
   const [hydrated, setHydrated] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<Ctx["syncStatus"]>("local");
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
+  const cloudReady = useRef(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     try {
@@ -165,6 +181,68 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       // stays in memory for this session even though it won't persist.
     }
   }, [state, hydrated]);
+
+  // On login: pull the cloud copy if one exists, otherwise treat the
+  // current (local) state as the first cloud save. Runs once per session.
+  useEffect(() => {
+    if (!hydrated || !userId) {
+      cloudReady.current = false;
+      if (!userId) setSyncStatus("local");
+      return;
+    }
+    let cancelled = false;
+    cloudReady.current = false;
+    setSyncStatus("syncing");
+    (async () => {
+      try {
+        const res = await fetch("/api/finance-data");
+        if (!res.ok) throw new Error(`GET /api/finance-data failed: ${res.status}`);
+        const body = (await res.json()) as { data: FinanceState | null };
+        if (cancelled) return;
+        if (body.data) {
+          setState(processDueRecurring({ ...defaultState, ...body.data }));
+        } else {
+          await fetch("/api/finance-data", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(state),
+          });
+        }
+        if (!cancelled) {
+          cloudReady.current = true;
+          setSyncStatus("synced");
+        }
+      } catch {
+        if (!cancelled) setSyncStatus("error");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Only re-run when the logged-in user changes, not on every state edit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, userId]);
+
+  // While logged in and past the initial pull, debounce-save edits to the cloud.
+  useEffect(() => {
+    if (!hydrated || !userId || !cloudReady.current) return;
+    setSyncStatus("syncing");
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/finance-data", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(state),
+        });
+        if (!res.ok) throw new Error(`PUT /api/finance-data failed: ${res.status}`);
+        setSyncStatus("synced");
+      } catch {
+        setSyncStatus("error");
+      }
+    }, 1200);
+    return () => clearTimeout(saveTimer.current);
+  }, [state, hydrated, userId]);
 
   const api = useMemo<Ctx>(
     () => ({
@@ -241,8 +319,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         setState((s) => ({ ...s, recurring: s.recurring.filter((r) => r.id !== id) })),
       reset: () => setState(defaultState),
       replaceState: (next) => setState(processDueRecurring({ ...defaultState, ...next })),
+      syncStatus,
     }),
-    [state],
+    [state, syncStatus],
   );
 
   return <FinanceContext.Provider value={api}>{children}</FinanceContext.Provider>;
