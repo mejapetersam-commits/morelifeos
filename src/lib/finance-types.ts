@@ -63,10 +63,36 @@ export interface Profile {
   onboarded: boolean;
 }
 
+export interface Budget {
+  id: string;
+  category: Category | string;
+  monthlyLimit: number;
+}
+
+export type RecurrenceFrequency = "weekly" | "monthly";
+
+export interface RecurringTransaction {
+  id: string;
+  type: TxType;
+  amount: number;
+  category: Category | string;
+  accountId: string;
+  toAccountId?: string;
+  description?: string;
+  frequency: RecurrenceFrequency;
+  /** Day of month (1-31) for "monthly", day of week (0=Sun..6=Sat) for "weekly" */
+  anchor: number;
+  nextDate: string; // ISO date of the next occurrence to post
+  active: boolean;
+  createdAt: string;
+}
+
 export interface FinanceState {
   profile: Profile;
   accounts: Account[];
   transactions: Transaction[];
   goals: Goal[];
   reviews: Review[];
+  budgets: Budget[];
+  recurring: RecurringTransaction[];
 }

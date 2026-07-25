@@ -1,5 +1,14 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { Account, FinanceState, Goal, Profile, Review, Transaction } from "./finance-types";
+import type {
+  Account,
+  Budget,
+  FinanceState,
+  Goal,
+  Profile,
+  RecurringTransaction,
+  Review,
+  Transaction,
+} from "./finance-types";
 
 const STORAGE_KEY = "financeos:v1";
 
@@ -21,6 +30,8 @@ const defaultState: FinanceState = {
   transactions: [],
   goals: [],
   reviews: [],
+  budgets: [],
+  recurring: [],
 };
 
 interface Ctx {
@@ -35,13 +46,99 @@ interface Ctx {
   updateGoal: (id: string, patch: Partial<Goal>) => void;
   removeGoal: (id: string) => void;
   addReview: (r: Omit<Review, "id" | "createdAt">) => void;
+  addBudget: (b: Omit<Budget, "id">) => void;
+  updateBudget: (id: string, patch: Partial<Budget>) => void;
+  removeBudget: (id: string) => void;
+  addRecurring: (r: Omit<RecurringTransaction, "id" | "createdAt">) => void;
+  updateRecurring: (id: string, patch: Partial<RecurringTransaction>) => void;
+  removeRecurring: (id: string) => void;
   reset: () => void;
+  replaceState: (next: FinanceState) => void;
 }
 
 const FinanceContext = createContext<Ctx | null>(null);
 
 function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+}
+
+function accountDelta(tx: Pick<Transaction, "type" | "amount">) {
+  return tx.type === "income"
+    ? tx.amount
+    : tx.type === "expense" || tx.type === "investment" || tx.type === "transfer"
+      ? -tx.amount
+      : 0;
+}
+
+function applyTxToAccounts(accounts: Account[], tx: Transaction): Account[] {
+  return accounts.map((a) => {
+    if (a.id === tx.accountId) {
+      return { ...a, balance: a.balance + accountDelta(tx) };
+    }
+    if (tx.type === "transfer" && a.id === tx.toAccountId) {
+      return { ...a, balance: a.balance + tx.amount };
+    }
+    return a;
+  });
+}
+
+/** Advance a recurring rule's nextDate by one period. */
+function advance(rule: RecurringTransaction): string {
+  const d = new Date(rule.nextDate);
+  if (rule.frequency === "weekly") {
+    d.setDate(d.getDate() + 7);
+  } else {
+    d.setMonth(d.getMonth() + 1);
+    // Clamp to the anchor day so short months don't drift the schedule.
+    d.setDate(Math.min(rule.anchor, daysInMonth(d.getFullYear(), d.getMonth())));
+  }
+  return d.toISOString();
+}
+
+function daysInMonth(year: number, month: number) {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+/**
+ * Posts any recurring transactions whose nextDate has arrived, catching up
+ * on missed periods (capped) if the app wasn't opened for a while.
+ */
+function processDueRecurring(state: FinanceState): FinanceState {
+  if (state.recurring.length === 0) return state;
+
+  let accounts = state.accounts;
+  const newTxs: Transaction[] = [];
+  const updatedRecurring = state.recurring.map((rule) => {
+    if (!rule.active) return rule;
+    let next = rule.nextDate;
+    let guard = 0;
+    while (new Date(next).getTime() <= Date.now() && guard < 24) {
+      const tx: Transaction = {
+        id: uid(),
+        type: rule.type,
+        amount: rule.amount,
+        category: rule.category,
+        accountId: rule.accountId,
+        toAccountId: rule.toAccountId,
+        date: next,
+        description: rule.description ? `${rule.description} (auto)` : undefined,
+      };
+      accounts = applyTxToAccounts(accounts, tx);
+      newTxs.push(tx);
+      next = advance({ ...rule, nextDate: next });
+      guard++;
+    }
+    return next === rule.nextDate ? rule : { ...rule, nextDate: next };
+  });
+
+  if (newTxs.length === 0) return state;
+
+  return {
+    ...state,
+    accounts,
+    transactions: [...newTxs, ...state.transactions],
+    recurring: updatedRecurring,
+  };
 }
 
 export function FinanceProvider({ children }: { children: ReactNode }) {
@@ -51,8 +148,11 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setState({ ...defaultState, ...JSON.parse(raw) });
-    } catch {}
+      const loaded = raw ? { ...defaultState, ...JSON.parse(raw) } : defaultState;
+      setState(processDueRecurring(loaded));
+    } catch {
+      // Corrupt or missing localStorage data — fall back to defaults.
+    }
     setHydrated(true);
   }, []);
 
@@ -60,7 +160,10 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     if (!hydrated) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {}
+    } catch {
+      // Storage may be full or unavailable (e.g. private browsing) — data
+      // stays in memory for this session even though it won't persist.
+    }
   }, [state, hydrated]);
 
   const api = useMemo<Ctx>(
@@ -83,43 +186,22 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       addTransaction: (t) =>
         setState((s) => {
           const tx: Transaction = { ...t, id: uid() };
-          const accounts = s.accounts.map((a) => {
-            if (a.id === tx.accountId) {
-              const delta =
-                tx.type === "income"
-                  ? tx.amount
-                  : tx.type === "expense" || tx.type === "investment" || tx.type === "transfer"
-                    ? -tx.amount
-                    : 0;
-              return { ...a, balance: a.balance + delta };
-            }
-            if (tx.type === "transfer" && a.id === tx.toAccountId) {
-              return { ...a, balance: a.balance + tx.amount };
-            }
-            return a;
-          });
-          return { ...s, accounts, transactions: [tx, ...s.transactions] };
+          return {
+            ...s,
+            accounts: applyTxToAccounts(s.accounts, tx),
+            transactions: [tx, ...s.transactions],
+          };
         }),
       removeTransaction: (id) =>
         setState((s) => {
           const tx = s.transactions.find((t) => t.id === id);
           if (!tx) return s;
-          const accounts = s.accounts.map((a) => {
-            if (a.id === tx.accountId) {
-              const delta =
-                tx.type === "income"
-                  ? -tx.amount
-                  : tx.type === "expense" || tx.type === "investment" || tx.type === "transfer"
-                    ? tx.amount
-                    : 0;
-              return { ...a, balance: a.balance + delta };
-            }
-            if (tx.type === "transfer" && a.id === tx.toAccountId) {
-              return { ...a, balance: a.balance - tx.amount };
-            }
-            return a;
-          });
-          return { ...s, accounts, transactions: s.transactions.filter((t) => t.id !== id) };
+          const reversed: Transaction = { ...tx, amount: -tx.amount };
+          return {
+            ...s,
+            accounts: applyTxToAccounts(s.accounts, reversed),
+            transactions: s.transactions.filter((t) => t.id !== id),
+          };
         }),
       addGoal: (g) =>
         setState((s) => ({
@@ -131,17 +213,34 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           ...s,
           goals: s.goals.map((g) => (g.id === id ? { ...g, ...patch } : g)),
         })),
-      removeGoal: (id) =>
-        setState((s) => ({ ...s, goals: s.goals.filter((g) => g.id !== id) })),
+      removeGoal: (id) => setState((s) => ({ ...s, goals: s.goals.filter((g) => g.id !== id) })),
       addReview: (r) =>
         setState((s) => ({
           ...s,
-          reviews: [
-            { ...r, id: uid(), createdAt: new Date().toISOString() },
-            ...s.reviews,
-          ],
+          reviews: [{ ...r, id: uid(), createdAt: new Date().toISOString() }, ...s.reviews],
         })),
+      addBudget: (b) => setState((s) => ({ ...s, budgets: [...s.budgets, { ...b, id: uid() }] })),
+      updateBudget: (id, patch) =>
+        setState((s) => ({
+          ...s,
+          budgets: s.budgets.map((b) => (b.id === id ? { ...b, ...patch } : b)),
+        })),
+      removeBudget: (id) =>
+        setState((s) => ({ ...s, budgets: s.budgets.filter((b) => b.id !== id) })),
+      addRecurring: (r) =>
+        setState((s) => ({
+          ...s,
+          recurring: [...s.recurring, { ...r, id: uid(), createdAt: new Date().toISOString() }],
+        })),
+      updateRecurring: (id, patch) =>
+        setState((s) => ({
+          ...s,
+          recurring: s.recurring.map((r) => (r.id === id ? { ...r, ...patch } : r)),
+        })),
+      removeRecurring: (id) =>
+        setState((s) => ({ ...s, recurring: s.recurring.filter((r) => r.id !== id) })),
       reset: () => setState(defaultState),
+      replaceState: (next) => setState(processDueRecurring({ ...defaultState, ...next })),
     }),
     [state],
   );

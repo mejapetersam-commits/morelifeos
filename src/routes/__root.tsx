@@ -12,6 +12,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { FinanceProvider } from "../lib/finance-store";
+import { ThemeProvider, themeInitScript } from "../lib/theme";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -88,14 +90,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "FinanceOS — Your Personal Financial Command Center" },
       {
         property: "og:description",
-        content: "A personal financial operating system that helps you understand, decide, and build long-term wealth with clarity.",
+        content:
+          "A personal financial operating system that helps you understand, decide, and build long-term wealth with clarity.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "FinanceOS — Your Personal Financial Command Center" },
-      { name: "twitter:description", content: "A personal financial operating system that helps you understand, decide, and build long-term wealth with clarity." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fb3f8847-5bfa-4a78-afdf-ff945897f334/id-preview-34bc2de9--7e93b13e-f4c2-4576-9ef5-7e92116bca0f.lovable.app-1783600171781.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fb3f8847-5bfa-4a78-afdf-ff945897f334/id-preview-34bc2de9--7e93b13e-f4c2-4576-9ef5-7e92116bca0f.lovable.app-1783600171781.png" },
+      {
+        name: "twitter:description",
+        content:
+          "A personal financial operating system that helps you understand, decide, and build long-term wealth with clarity.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fb3f8847-5bfa-4a78-afdf-ff945897f334/id-preview-34bc2de9--7e93b13e-f4c2-4576-9ef5-7e92116bca0f.lovable.app-1783600171781.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fb3f8847-5bfa-4a78-afdf-ff945897f334/id-preview-34bc2de9--7e93b13e-f4c2-4576-9ef5-7e92116bca0f.lovable.app-1783600171781.png",
+      },
     ],
     links: [
       {
@@ -122,6 +137,7 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
         {children}
@@ -136,9 +152,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <FinanceProvider>
-        <Outlet />
-      </FinanceProvider>
+      <ThemeProvider>
+        <FinanceProvider>
+          <Outlet />
+          <Toaster />
+        </FinanceProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

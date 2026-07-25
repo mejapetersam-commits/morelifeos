@@ -13,12 +13,7 @@ import {
   monthlySeries,
   pct,
 } from "@/lib/finance-utils";
-import {
-  AnimatedMoney,
-  KpiCard,
-  ProgressRing,
-  SectionTitle,
-} from "@/components/finance-cards";
+import { AnimatedMoney, KpiCard, ProgressRing, SectionTitle } from "@/components/finance-cards";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -27,6 +22,9 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import {
   ArrowUpRight,
@@ -82,9 +80,8 @@ function Home() {
 
   const deltaIncome = pct(m.monthIncome, m.prevIncome);
   const deltaExpenses = pct(m.monthExpenses, m.prevExpenses);
-  const deltaSavings = m.prevIncome > 0
-    ? m.savingsRate - (m.prevIncome - m.prevExpenses) / m.prevIncome
-    : 0;
+  const deltaSavings =
+    m.prevIncome > 0 ? m.savingsRate - (m.prevIncome - m.prevExpenses) / m.prevIncome : 0;
 
   const health = healthScore(m, state.goals.length > 0);
   const healthLabel =
@@ -101,6 +98,20 @@ function Home() {
 
   const topGoal = state.goals[0];
   const eta = topGoal ? goalEta(topGoal, surplusEstimate) : null;
+
+  const categoryData = Object.entries(m.byCategory)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
+  const CATEGORY_COLORS = [
+    "var(--gold)",
+    "var(--emerald)",
+    "var(--coral)",
+    "var(--royal)",
+    "var(--indigo)",
+    "var(--amber)",
+    "var(--sage)",
+    "var(--ocean)",
+  ];
 
   return (
     <>
@@ -130,7 +141,10 @@ function Home() {
             </p>
 
             <div className="mt-8 grid grid-cols-2 gap-x-8 gap-y-5 md:grid-cols-4 md:max-w-3xl">
-              <HeroStat label="Net Worth" value={<AnimatedMoney value={netWorth} currency={currency} />} />
+              <HeroStat
+                label="Net Worth"
+                value={<AnimatedMoney value={netWorth} currency={currency} />}
+              />
               <HeroStat
                 label="Available Cash"
                 value={<AnimatedMoney value={m.availableCash} currency={currency} />}
@@ -141,9 +155,7 @@ function Home() {
               />
               <HeroStat
                 label="Savings Rate"
-                value={
-                  <span className="num">{Math.round(m.savingsRate * 100)}%</span>
-                }
+                value={<span className="num">{Math.round(m.savingsRate * 100)}%</span>}
                 sub={healthLabel}
               />
             </div>
@@ -229,8 +241,9 @@ function Home() {
               value={
                 <AnimatedMoney
                   value={
-                    state.accounts.filter((a) => a.type === "investment").reduce((s, a) => s + a.balance, 0) +
-                    state.profile.investments
+                    state.accounts
+                      .filter((a) => a.type === "investment")
+                      .reduce((s, a) => s + a.balance, 0) + state.profile.investments
                   }
                   currency={currency}
                 />
@@ -368,11 +381,17 @@ function Home() {
                 </div>
                 {eta && eta.date && (
                   <div className="mt-4 rounded-full bg-royal/8 px-3 py-1.5 text-[12px] font-medium text-royal">
-                    Expected: {eta.date.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}
+                    Expected:{" "}
+                    {eta.date.toLocaleDateString(undefined, {
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
                   </div>
                 )}
                 <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-muted-foreground">
-                  At an estimated {formatMoney(surplusEstimate, currency)} / month, you're on a steady path.
+                  At an estimated {formatMoney(surplusEstimate, currency)} / month, you're on a
+                  steady path.
                 </p>
               </div>
             ) : (
@@ -382,6 +401,71 @@ function Home() {
                 body="Goals give money direction. Even one clear goal changes how everyday choices feel."
                 cta={{ to: "/goals", label: "Create your first goal" }}
               />
+            )}
+          </div>
+        </section>
+
+        {/* ─── Spending by Category ────────────────────────────── */}
+        <section className="mt-12">
+          <SectionTitle eyebrow="This month" title="Where it went" />
+          <div className="rounded-3xl bg-surface-elevated p-7 shadow-soft">
+            {categoryData.length === 0 ? (
+              <EmptyState
+                icon={PiggyBank}
+                title="No expenses recorded this month yet."
+                body="Once you log a few, this breaks down where your money is actually going."
+              />
+            ) : (
+              <div className="flex flex-col items-center gap-8 md:flex-row">
+                <div className="h-56 w-56 shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categoryData}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={58}
+                        outerRadius={90}
+                        paddingAngle={2}
+                        strokeWidth={0}
+                        animationDuration={900}
+                      >
+                        {categoryData.map((_, i) => (
+                          <Cell key={i} fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          background: "var(--card)",
+                          border: "1px solid var(--border)",
+                          borderRadius: 12,
+                          fontSize: 12,
+                          boxShadow: "var(--shadow-lift)",
+                        }}
+                        formatter={(v: number) => formatMoney(v, currency)}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <ul className="w-full space-y-2.5">
+                  {categoryData.map((c, i) => {
+                    const share = m.monthExpenses > 0 ? c.value / m.monthExpenses : 0;
+                    return (
+                      <li key={c.name} className="flex items-center justify-between text-[13px]">
+                        <span className="flex items-center gap-2.5">
+                          <span
+                            className="h-2.5 w-2.5 rounded-full"
+                            style={{ background: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }}
+                          />
+                          {c.name}
+                          <span className="text-muted-foreground">{Math.round(share * 100)}%</span>
+                        </span>
+                        <span className="num font-semibold">{formatMoney(c.value, currency)}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             )}
           </div>
         </section>
@@ -545,21 +629,34 @@ function IntelligenceItem({
   );
 }
 
-function TxRow({ tx, currency }: { tx: ReturnType<typeof useFinance>["state"]["transactions"][number]; currency: string }) {
+function TxRow({
+  tx,
+  currency,
+}: {
+  tx: ReturnType<typeof useFinance>["state"]["transactions"][number];
+  currency: string;
+}) {
   const isIncome = tx.type === "income";
   const isTransfer = tx.type === "transfer";
   const color = isIncome ? "text-sage" : isTransfer ? "text-royal" : "text-foreground";
-  const bg =
-    isIncome ? "bg-sage/10 text-sage" :
-    isTransfer ? "bg-royal/10 text-royal" :
-    tx.type === "investment" ? "bg-indigo/10 text-indigo" :
-    "bg-coral/10 text-coral";
+  const bg = isIncome
+    ? "bg-sage/10 text-sage"
+    : isTransfer
+      ? "bg-royal/10 text-royal"
+      : tx.type === "investment"
+        ? "bg-indigo/10 text-indigo"
+        : "bg-coral/10 text-coral";
   const sign = isIncome ? "+" : "−";
   const d = new Date(tx.date);
   const dayLabel = relativeDay(d);
   return (
     <li className="flex items-center gap-4 py-3.5">
-      <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-medium", bg)}>
+      <div
+        className={cn(
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-medium",
+          bg,
+        )}
+      >
         {tx.category?.slice(0, 1).toUpperCase() ?? "•"}
       </div>
       <div className="min-w-0 flex-1">
@@ -615,9 +712,7 @@ function deriveUpcomingBills(state: ReturnType<typeof useFinance>["state"]): Bil
       status: days < 0 ? "overdue" : days <= 5 ? "soon" : "upcoming",
     });
   }
-  return recurring
-    .sort((a, b) => a.due.getTime() - b.due.getTime())
-    .slice(0, 4);
+  return recurring.sort((a, b) => a.due.getTime() - b.due.getTime()).slice(0, 4);
 }
 
 function BillRow({ bill, currency }: { bill: Bill; currency: string }) {
@@ -641,7 +736,12 @@ function BillRow({ bill, currency }: { bill: Bill; currency: string }) {
         <span className="num text-[14px] font-semibold">
           {currency} {Math.round(bill.amount).toLocaleString()}
         </span>
-        <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest", badge)}>
+        <span
+          className={cn(
+            "rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest",
+            badge,
+          )}
+        >
           {badgeText}
         </span>
       </div>
@@ -719,7 +819,10 @@ function relativeDay(d: Date) {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function heroCopy(state: ReturnType<typeof useFinance>["state"], m: ReturnType<typeof computeMetrics>) {
+function heroCopy(
+  state: ReturnType<typeof useFinance>["state"],
+  m: ReturnType<typeof computeMetrics>,
+) {
   if (m.monthIncome === 0 && state.accounts.length === 0) {
     return {
       headline: "Let's set the foundation of your financial system.",
