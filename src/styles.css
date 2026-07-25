@@ -106,6 +106,54 @@
   --chart-5: oklch(0.7 0.11 30);
 }
 
+.dark {
+  /* Rich deep navy base — chroma carried through every layer so it reads
+     as "ocean at night", not desaturated charcoal (fixing the earlier
+     gloomy attempt). Every accent below is brightened vs. its light-mode
+     value so it still pops against the dark surface. */
+  --background: oklch(0.15 0.045 260);
+  --surface: oklch(0.185 0.045 260);
+  --surface-elevated: oklch(0.235 0.045 258);
+  --foreground: oklch(0.96 0.012 90);
+  --card: oklch(0.22 0.045 258);
+  --card-foreground: oklch(0.96 0.012 90);
+  --popover: oklch(0.22 0.045 258);
+  --popover-foreground: oklch(0.96 0.012 90);
+  /* Gold becomes the primary action color against dark navy */
+  --primary: oklch(0.8 0.15 85);
+  --primary-foreground: oklch(0.18 0.04 258);
+  --ocean: oklch(0.34 0.08 258);
+  --ocean-foreground: oklch(0.96 0.012 90);
+  --secondary: oklch(0.27 0.04 258);
+  --secondary-foreground: oklch(0.96 0.012 90);
+  --muted: oklch(0.25 0.035 258);
+  --muted-foreground: oklch(0.72 0.025 250);
+  --accent: oklch(0.3 0.045 258);
+  --accent-foreground: oklch(0.96 0.012 90);
+  --gold: oklch(0.8 0.15 85);
+  --gold-foreground: oklch(0.18 0.04 258);
+  --sage: oklch(0.72 0.1 150);
+  --sage-foreground: oklch(0.15 0.03 150);
+  --emerald: oklch(0.72 0.14 155);
+  --coral: oklch(0.74 0.13 30);
+  --royal: oklch(0.68 0.16 260);
+  --amber: oklch(0.8 0.15 70);
+  --indigo: oklch(0.68 0.15 285);
+  --destructive: oklch(0.68 0.19 25);
+  --destructive-foreground: oklch(0.98 0.008 90);
+  --border: oklch(0.33 0.04 258);
+  --input: oklch(0.3 0.04 258);
+  --ring: oklch(0.8 0.15 85);
+  --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.3), 0 8px 24px oklch(0 0 0 / 0.35);
+  --shadow-lift: 0 2px 6px oklch(0 0 0 / 0.3), 0 20px 40px oklch(0 0 0 / 0.4);
+  --shadow-hero: 0 1px 1px oklch(0 0 0 / 0.2), 0 30px 60px -20px oklch(0 0 0 / 0.5);
+  --chart-1: oklch(0.8 0.15 85);
+  --chart-2: oklch(0.72 0.1 150);
+  --chart-3: oklch(0.68 0.16 260);
+  --chart-4: oklch(0.74 0.13 30);
+  --chart-5: oklch(0.68 0.15 285);
+}
+
 @layer base {
   * { border-color: var(--color-border); }
   html, body {

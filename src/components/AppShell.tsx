@@ -1,8 +1,25 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Wallet, Target, NotebookPen, Sparkles, CheckCircle2, Circle } from "lucide-react";
+import {
+  Home,
+  Wallet,
+  Target,
+  NotebookPen,
+  Sparkles,
+  CheckCircle2,
+  Circle,
+  Settings,
+  Sun,
+  Moon,
+  LogIn,
+  Cloud,
+  CloudOff,
+  Loader2,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { useFinance } from "@/lib/finance-store";
 import { computeMetrics } from "@/lib/finance-utils";
+import { useTheme } from "@/lib/theme";
+import { useSession, signOut } from "@/lib/auth-client";
 
 const nav = [
   { to: "/", label: "Overview", icon: Home },
@@ -10,7 +27,67 @@ const nav = [
   { to: "/goals", label: "Goals", icon: Target },
   { to: "/reviews", label: "Reviews", icon: NotebookPen },
   { to: "/ai", label: "Intelligence", icon: Sparkles },
+  { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
+
+function QuickThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  const isDark = theme === "dark";
+  return (
+    <button
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-foreground/65 transition-colors hover:bg-accent hover:text-foreground"
+      aria-label="Toggle dark mode"
+    >
+      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      {isDark ? "Light mode" : "Dark mode"}
+    </button>
+  );
+}
+
+function AccountStatus() {
+  const { data: session } = useSession();
+  const { syncStatus } = useFinance();
+
+  if (!session) {
+    return (
+      <Link
+        to="/login"
+        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-foreground/65 transition-colors hover:bg-accent hover:text-foreground"
+      >
+        <LogIn className="h-4 w-4" />
+        Log in to sync
+      </Link>
+    );
+  }
+
+  const syncIcon =
+    syncStatus === "syncing" ? (
+      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+    ) : syncStatus === "error" ? (
+      <CloudOff className="h-3.5 w-3.5 text-coral" />
+    ) : (
+      <Cloud className="h-3.5 w-3.5 text-sage" />
+    );
+
+  return (
+    <div className="flex items-center justify-between rounded-xl px-3 py-2">
+      <div className="min-w-0">
+        <div className="truncate text-[13px] font-medium">{session.user.email}</div>
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          {syncIcon}
+          {syncStatus === "syncing" ? "Syncing…" : syncStatus === "error" ? "Sync error" : "Synced"}
+        </div>
+      </div>
+      <button
+        onClick={() => signOut()}
+        className="shrink-0 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+      >
+        Log out
+      </button>
+    </div>
+  );
+}
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
@@ -46,7 +123,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div>
             <div className="font-display text-[15px] font-semibold leading-tight">More LifeOS</div>
-            <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">FinanceOS</div>
+            <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+              FinanceOS
+            </div>
           </div>
         </Link>
 
@@ -63,7 +142,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                     : "text-foreground/65 hover:bg-accent hover:text-foreground"
                 }`}
               >
-                <n.icon className={`h-[17px] w-[17px] ${active ? "" : "text-foreground/50 group-hover:text-foreground"}`} />
+                <n.icon
+                  className={`h-[17px] w-[17px] ${active ? "" : "text-foreground/50 group-hover:text-foreground"}`}
+                />
                 {n.label}
               </Link>
             );
@@ -85,7 +166,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 ) : (
                   <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/60" />
                 )}
-                <span className={f.done ? "text-muted-foreground line-through" : "text-foreground/80"}>
+                <span
+                  className={f.done ? "text-muted-foreground line-through" : "text-foreground/80"}
+                >
                   {f.text}
                 </span>
               </li>
@@ -93,8 +176,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           </ul>
         </div>
 
-        <div className="mt-auto px-2 pt-6 text-[11px] leading-relaxed text-muted-foreground">
-          Build for decisions, not data.
+        <div className="mt-auto flex flex-col gap-1 px-2 pt-6">
+          <AccountStatus />
+          <QuickThemeToggle />
+          <div className="px-1 pt-2 text-[11px] leading-relaxed text-muted-foreground">
+            Build for decisions, not data.
+          </div>
         </div>
       </aside>
 
