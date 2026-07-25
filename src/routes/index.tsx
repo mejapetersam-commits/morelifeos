@@ -509,8 +509,12 @@ function IntelligenceItem({
   insight: ReturnType<typeof generateInsights>[number];
   index: number;
 }) {
-  const accent =
-    insight.tone === "positive" ? "sage" : insight.tone === "attention" ? "amber" : "indigo";
+  const dotClass =
+    insight.tone === "positive"
+      ? "bg-sage"
+      : insight.tone === "attention"
+        ? "bg-amber"
+        : "bg-indigo";
   return (
     <div
       className="animate-fade-in"
