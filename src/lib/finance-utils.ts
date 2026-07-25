@@ -1,10 +1,9 @@
 import type { FinanceState, Goal, Transaction } from "./finance-types";
 
-export function greeting(now = new Date()) {
+export function greeting(now = new Date(), name?: string) {
   const h = now.getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
+  const base = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+  return name ? `${base}, ${name}` : base;
 }
 
 export function pct(now: number, prev: number) {
@@ -129,6 +128,7 @@ export interface Insight {
 
 export function generateInsights(state: FinanceState, m: FinanceMetrics): Insight[] {
   const out: Insight[] = [];
+  const currency = state.profile.currency;
 
   if (m.monthIncome > 0) {
     if (m.savingsRate >= 0.2) {
@@ -150,7 +150,7 @@ export function generateInsights(state: FinanceState, m: FinanceMetrics): Insigh
     }
   }
 
-  // Category jumps
+  // Category jumps vs last month
   for (const cat of Object.keys(m.byCategory)) {
     const now = m.byCategory[cat];
     const prev = m.prevByCategory[cat] || 0;
@@ -162,6 +162,33 @@ export function generateInsights(state: FinanceState, m: FinanceMetrics): Insigh
         observation: `${cat} spending is up ${pct}% vs last month.`,
         explanation: "A meaningful shift here reduces the capacity available for goals and savings.",
         options: [`Set a monthly ${cat.toLowerCase()} intention`, "Explore lower-cost alternatives", "Accept and adjust your plan"],
+      });
+    }
+  }
+
+  // Budget overruns — uses the budgets already set on the Money page
+  for (const b of state.budgets) {
+    const spent = m.byCategory[b.category] || 0;
+    if (b.monthlyLimit <= 0) continue;
+    if (spent > b.monthlyLimit) {
+      out.push({
+        id: `budget-over-${b.id}`,
+        tone: "attention",
+        observation: `You're ${formatMoney(spent - b.monthlyLimit, currency)} over your ${b.category} budget.`,
+        explanation: `You've spent ${formatMoney(spent, currency)} of a ${formatMoney(b.monthlyLimit, currency)} monthly limit, with time still left in the month.`,
+        options: [
+          `Pause non-essential ${b.category.toLowerCase()} spending`,
+          "Raise the budget if it's no longer realistic",
+          "Accept and adjust next month",
+        ],
+      });
+    } else if (spent >= b.monthlyLimit * 0.8) {
+      out.push({
+        id: `budget-near-${b.id}`,
+        tone: "neutral",
+        observation: `You're close to your ${b.category} budget — ${Math.round((spent / b.monthlyLimit) * 100)}% used.`,
+        explanation: "Worth a glance before the month closes out.",
+        options: [`Review recent ${b.category.toLowerCase()} transactions`, "Keep the current pace"],
       });
     }
   }
