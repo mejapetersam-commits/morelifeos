@@ -41,8 +41,14 @@
   --color-ocean-foreground: var(--ocean-foreground);
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
+  --color-emerald: var(--emerald);
+  --color-coral: var(--coral);
+  --color-royal: var(--royal);
+  --color-amber: var(--amber);
+  --color-indigo: var(--indigo);
   --shadow-soft: 0 1px 2px oklch(0.2 0.05 250 / 0.04), 0 8px 24px oklch(0.2 0.05 250 / 0.06);
   --shadow-lift: 0 2px 6px oklch(0.2 0.05 250 / 0.05), 0 20px 40px oklch(0.2 0.05 250 / 0.08);
+  --shadow-hero: 0 1px 1px oklch(0.2 0.05 250 / 0.03), 0 30px 60px -20px oklch(0.22 0.06 255 / 0.14);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
