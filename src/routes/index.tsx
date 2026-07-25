@@ -521,7 +521,7 @@ function IntelligenceItem({
       style={{ animationDelay: `${index * 80}ms`, animationFillMode: "backwards" }}
     >
       <div className="flex items-center gap-2">
-        <span className={`h-1.5 w-1.5 rounded-full bg-${accent}`} />
+        <span className={`h-1.5 w-1.5 rounded-full ${dotClass}`} />
         <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
           {insight.tone === "positive"
             ? "Momentum"
