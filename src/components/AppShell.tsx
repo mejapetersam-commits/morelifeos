@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Wallet, Target, NotebookPen, Sparkles } from "lucide-react";
+import { Home, Wallet, Target, NotebookPen, Sparkles, Settings, Sun, Moon } from "lucide-react";
 import type { ReactNode } from "react";
+import { useTheme } from "@/lib/theme";
 
 const nav = [
   { to: "/", label: "Home", icon: Home },
@@ -8,7 +9,25 @@ const nav = [
   { to: "/goals", label: "Goals", icon: Target },
   { to: "/reviews", label: "Reviews", icon: NotebookPen },
   { to: "/ai", label: "AI", icon: Sparkles },
+  { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
+
+function QuickThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  // Cycles light -> dark -> light for a quick one-click toggle;
+  // full light/dark/system control lives on the Settings page.
+  const isDark = theme === "dark";
+  return (
+    <button
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground/70 transition-colors hover:bg-accent hover:text-foreground"
+      aria-label="Toggle dark mode"
+    >
+      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      {isDark ? "Light mode" : "Dark mode"}
+    </button>
+  );
+}
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
@@ -23,7 +42,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div>
             <div className="font-display text-sm font-semibold leading-tight">More LifeOS</div>
-            <div className="text-[11px] uppercase tracking-widest text-muted-foreground">FinanceOS</div>
+            <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
+              FinanceOS
+            </div>
           </div>
         </Link>
         <nav className="flex flex-col gap-1">
@@ -45,8 +66,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <div className="mt-auto text-[11px] leading-relaxed text-muted-foreground">
-          Build for decisions, not data.
+        <div className="mt-auto flex flex-col gap-2">
+          <QuickThemeToggle />
+          <div className="px-3 text-[11px] leading-relaxed text-muted-foreground">
+            Build for decisions, not data.
+          </div>
         </div>
       </aside>
 

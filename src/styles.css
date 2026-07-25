@@ -90,6 +90,43 @@
   --chart-5: oklch(0.65 0.1 40);
 }
 
+.dark {
+  /* Deep charcoal-navy base, warm ivory text, gold stays the accent */
+  --background: oklch(0.17 0.025 255);
+  --surface: oklch(0.2 0.025 255);
+  --surface-elevated: oklch(0.23 0.025 255);
+  --foreground: oklch(0.95 0.01 90);
+  --card: oklch(0.21 0.025 255);
+  --card-foreground: oklch(0.95 0.01 90);
+  --popover: oklch(0.21 0.025 255);
+  --popover-foreground: oklch(0.95 0.01 90);
+  /* Ocean becomes the lighter accent surface in dark mode */
+  --primary: oklch(0.74 0.13 85);
+  --primary-foreground: oklch(0.2 0.04 255);
+  --ocean: oklch(0.3 0.06 255);
+  --ocean-foreground: oklch(0.95 0.01 90);
+  --secondary: oklch(0.25 0.02 255);
+  --secondary-foreground: oklch(0.95 0.01 90);
+  --muted: oklch(0.24 0.02 255);
+  --muted-foreground: oklch(0.68 0.02 255);
+  --accent: oklch(0.27 0.03 255);
+  --accent-foreground: oklch(0.95 0.01 90);
+  --gold: oklch(0.78 0.13 85);
+  --gold-foreground: oklch(0.2 0.04 255);
+  --sage: oklch(0.68 0.08 150);
+  --sage-foreground: oklch(0.15 0.02 150);
+  --destructive: oklch(0.65 0.2 25);
+  --destructive-foreground: oklch(0.98 0.008 90);
+  --border: oklch(0.3 0.02 255);
+  --input: oklch(0.28 0.02 255);
+  --ring: oklch(0.78 0.13 85);
+  --chart-1: oklch(0.78 0.13 85);
+  --chart-2: oklch(0.68 0.08 150);
+  --chart-3: oklch(0.65 0.1 255);
+  --chart-4: oklch(0.7 0.1 40);
+  --chart-5: oklch(0.6 0.06 255);
+}
+
 @layer base {
   * { border-color: var(--color-border); }
   html, body {

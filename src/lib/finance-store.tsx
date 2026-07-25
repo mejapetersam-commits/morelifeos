@@ -36,6 +36,7 @@ interface Ctx {
   removeGoal: (id: string) => void;
   addReview: (r: Omit<Review, "id" | "createdAt">) => void;
   reset: () => void;
+  replaceState: (next: FinanceState) => void;
 }
 
 const FinanceContext = createContext<Ctx | null>(null);
@@ -131,17 +132,14 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           ...s,
           goals: s.goals.map((g) => (g.id === id ? { ...g, ...patch } : g)),
         })),
-      removeGoal: (id) =>
-        setState((s) => ({ ...s, goals: s.goals.filter((g) => g.id !== id) })),
+      removeGoal: (id) => setState((s) => ({ ...s, goals: s.goals.filter((g) => g.id !== id) })),
       addReview: (r) =>
         setState((s) => ({
           ...s,
-          reviews: [
-            { ...r, id: uid(), createdAt: new Date().toISOString() },
-            ...s.reviews,
-          ],
+          reviews: [{ ...r, id: uid(), createdAt: new Date().toISOString() }, ...s.reviews],
         })),
       reset: () => setState(defaultState),
+      replaceState: (next) => setState({ ...defaultState, ...next }),
     }),
     [state],
   );

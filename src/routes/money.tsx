@@ -9,10 +9,22 @@ import type { AccountType, TxType } from "@/lib/finance-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Pencil } from "lucide-react";
 
 export const Route = createFileRoute("/money")({
   head: () => ({
@@ -40,7 +52,8 @@ const categories = [
 ];
 
 function Money() {
-  const { state, addAccount, removeAccount, addTransaction, removeTransaction } = useFinance();
+  const { state, addAccount, updateAccount, removeAccount, addTransaction, removeTransaction } =
+    useFinance();
   const currency = state.profile.currency;
 
   return (
@@ -81,13 +94,19 @@ function Money() {
                     <div className="mt-4 font-display text-2xl font-semibold num">
                       {formatMoney(a.balance, a.currency)}
                     </div>
-                    <button
-                      onClick={() => removeAccount(a.id)}
-                      className="absolute right-4 top-4 rounded-lg p-2 text-muted-foreground opacity-0 transition-opacity hover:bg-accent group-hover:opacity-100"
-                      aria-label="Delete account"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <div className="absolute right-4 top-4 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <EditAccountDialog
+                        account={a}
+                        onSave={(patch) => updateAccount(a.id, patch)}
+                      />
+                      <button
+                        onClick={() => removeAccount(a.id)}
+                        className="rounded-lg p-2 text-muted-foreground hover:bg-accent"
+                        aria-label="Delete account"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -96,10 +115,7 @@ function Money() {
 
           <TabsContent value="transactions" className="mt-6">
             <div className="mb-4 flex justify-end">
-              <AddTxDialog
-                accounts={state.accounts}
-                onAdd={addTransaction}
-              />
+              <AddTxDialog accounts={state.accounts} onAdd={addTransaction} />
             </div>
             {state.transactions.length === 0 ? (
               <EmptyState text="Record income and expenses to build your financial picture." />
@@ -119,8 +135,7 @@ function Money() {
                   <tbody>
                     {state.transactions.map((t) => {
                       const acct = state.accounts.find((a) => a.id === t.accountId);
-                      const sign =
-                        t.type === "income" ? "+" : t.type === "expense" ? "−" : "";
+                      const sign = t.type === "income" ? "+" : t.type === "expense" ? "−" : "";
                       const color =
                         t.type === "income"
                           ? "text-sage"
@@ -129,9 +144,7 @@ function Money() {
                             : "text-ocean";
                       return (
                         <tr key={t.id} className="border-t border-border/60">
-                          <td className="px-4 py-3 num">
-                            {new Date(t.date).toLocaleDateString()}
-                          </td>
+                          <td className="px-4 py-3 num">{new Date(t.date).toLocaleDateString()}</td>
                           <td className="px-4 py-3 capitalize">{t.type}</td>
                           <td className="px-4 py-3">{t.category}</td>
                           <td className="px-4 py-3 text-muted-foreground">
@@ -206,12 +219,18 @@ function AddAccountDialog({
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label>Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Salary account" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Salary account"
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Type</Label>
             <Select value={type} onValueChange={(v) => setType(v as AccountType)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="bank">Bank</SelectItem>
                 <SelectItem value="mobile">Mobile money</SelectItem>
@@ -222,10 +241,100 @@ function AddAccountDialog({
           </div>
           <div className="space-y-1.5">
             <Label>Starting balance</Label>
-            <Input inputMode="numeric" value={balance} onChange={(e) => setBalance(e.target.value)} />
+            <Input
+              inputMode="numeric"
+              value={balance}
+              onChange={(e) => setBalance(e.target.value)}
+            />
           </div>
-          <Button onClick={submit} className="w-full bg-ocean text-ocean-foreground hover:bg-ocean/90">
+          <Button
+            onClick={submit}
+            className="w-full bg-ocean text-ocean-foreground hover:bg-ocean/90"
+          >
             Add account
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditAccountDialog({
+  account,
+  onSave,
+}: {
+  account: { id: string; name: string; type: AccountType; balance: number };
+  onSave: (patch: { name: string; type: AccountType; balance: number }) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(account.name);
+  const [type, setType] = useState<AccountType>(account.type);
+  const [balance, setBalance] = useState(String(account.balance));
+
+  const openWithReset = (next: boolean) => {
+    if (next) {
+      setName(account.name);
+      setType(account.type);
+      setBalance(String(account.balance));
+    }
+    setOpen(next);
+  };
+
+  const submit = () => {
+    if (!name.trim()) return;
+    onSave({ name: name.trim(), type, balance: Number(balance) || 0 });
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={openWithReset}>
+      <DialogTrigger asChild>
+        <button
+          className="rounded-lg p-2 text-muted-foreground hover:bg-accent"
+          aria-label="Edit account"
+        >
+          <Pencil className="h-4 w-4" />
+        </button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit account</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label>Name</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Type</Label>
+            <Select value={type} onValueChange={(v) => setType(v as AccountType)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="bank">Bank</SelectItem>
+                <SelectItem value="mobile">Mobile money</SelectItem>
+                <SelectItem value="cash">Cash</SelectItem>
+                <SelectItem value="investment">Investment</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Balance</Label>
+            <Input
+              inputMode="numeric"
+              value={balance}
+              onChange={(e) => setBalance(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Adjusting this directly changes the balance without creating a transaction.
+            </p>
+          </div>
+          <Button
+            onClick={submit}
+            className="w-full bg-ocean text-ocean-foreground hover:bg-ocean/90"
+          >
+            Save changes
           </Button>
         </div>
       </DialogContent>
@@ -308,7 +417,11 @@ function AddTxDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Amount</Label>
-              <Input inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} />
+              <Input
+                inputMode="numeric"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Date</Label>
@@ -318,10 +431,14 @@ function AddTxDialog({
           <div className="space-y-1.5">
             <Label>{type === "transfer" ? "From account" : "Account"}</Label>
             <Select value={accountId} onValueChange={setAccountId}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {accounts.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -330,11 +447,17 @@ function AddTxDialog({
             <div className="space-y-1.5">
               <Label>To account</Label>
               <Select value={toAccountId} onValueChange={setToAccountId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {accounts.filter((a) => a.id !== accountId).map((a) => (
-                    <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
-                  ))}
+                  {accounts
+                    .filter((a) => a.id !== accountId)
+                    .map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -343,10 +466,14 @@ function AddTxDialog({
             <div className="space-y-1.5">
               <Label>Category</Label>
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {categories.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
