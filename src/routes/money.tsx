@@ -228,7 +228,11 @@ function Money() {
                 </Button>
               )}
               <div className="ml-auto">
-                <AddTxDialog accounts={state.accounts} onAdd={addTransaction} />
+                <AddTxDialog
+                  accounts={state.accounts}
+                  incomeSources={state.incomeSources}
+                  onAdd={addTransaction}
+                />
               </div>
             </div>
 
@@ -579,9 +583,11 @@ function EditAccountDialog({
 
 function AddTxDialog({
   accounts,
+  incomeSources,
   onAdd,
 }: {
   accounts: { id: string; name: string; type: AccountType }[];
+  incomeSources: { id: string; name: string }[];
   onAdd: (t: {
     type: TxType;
     amount: number;
@@ -590,6 +596,7 @@ function AddTxDialog({
     toAccountId?: string;
     date: string;
     description?: string;
+    sourceId?: string;
   }) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -600,6 +607,7 @@ function AddTxDialog({
   const [toAccountId, setToAccountId] = useState(accounts[1]?.id || "");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [description, setDescription] = useState("");
+  const [sourceId, setSourceId] = useState<string>("none");
 
   const disabled = !accountId || !amount || Number(amount) <= 0;
 
@@ -613,9 +621,11 @@ function AddTxDialog({
       toAccountId: type === "transfer" ? toAccountId : undefined,
       date: new Date(date).toISOString(),
       description: description.trim() || undefined,
+      sourceId: type === "income" && sourceId !== "none" ? sourceId : undefined,
     });
     setAmount("");
     setDescription("");
+    setSourceId("none");
     setOpen(false);
   };
 
@@ -678,6 +688,24 @@ function AddTxDialog({
               </SelectContent>
             </Select>
           </div>
+          {type === "income" && incomeSources.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Income source (optional)</Label>
+              <Select value={sourceId} onValueChange={setSourceId}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {incomeSources.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           {type === "transfer" && (
             <div className="space-y-1.5">
               <Label>To account</Label>

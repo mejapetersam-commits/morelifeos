@@ -376,3 +376,140 @@ export function computeInvestmentSummary(state: FinanceState): InvestmentSummary
 
   return { accounts, totalInvested, weightedAvgReturn, projected, byInstitutionType };
 }
+
+// ─── Income Pipeline ───────────────────────────────────────────────────
+
+export interface PipelineMetrics {
+  expected: number;
+  confirmed: number;
+  collected: number;
+  lost: number;
+  conversionRate: number; // percent
+}
+
+export function computePipelineMetrics(state: FinanceState): PipelineMetrics {
+  const opps = state.opportunities;
+  const expected = opps
+    .filter(
+      (o) =>
+        o.status === "idea" ||
+        o.status === "quoted" ||
+        o.status === "negotiating" ||
+        o.status === "confirmed",
+    )
+    .reduce((s, o) => s + o.amount, 0);
+  const confirmed = opps.filter((o) => o.status === "confirmed").reduce((s, o) => s + o.amount, 0);
+  const collected = opps.filter((o) => o.status === "paid").reduce((s, o) => s + o.amount, 0);
+  const lost = opps.filter((o) => o.status === "cancelled").reduce((s, o) => s + o.amount, 0);
+  const paidCount = opps.filter((o) => o.status === "paid").length;
+  const cancelledCount = opps.filter((o) => o.status === "cancelled").length;
+  const closed = paidCount + cancelledCount;
+  const conversionRate = closed > 0 ? (paidCount / closed) * 100 : 0;
+  return { expected, confirmed, collected, lost, conversionRate };
+}
+
+// ─── Income Sources ────────────────────────────────────────────────────
+
+function sumInRange(txs: Transaction[], sourceId: string, start: Date, end: Date) {
+  return txs
+    .filter(
+      (t) =>
+        t.type === "income" &&
+        t.sourceId === sourceId &&
+        new Date(t.date) >= start &&
+        new Date(t.date) < end,
+    )
+    .reduce((s, t) => s + t.amount, 0);
+}
+
+export interface SourceAnalytics {
+  source: FinanceState["incomeSources"][number];
+  allTime: number;
+  thisMonth: number;
+  lastMonth: number;
+  momGrowthPct: number | null;
+  ytd: number;
+  pctContributionThisMonth: number;
+  isBestPerforming: boolean;
+  isMostConsistent: boolean;
+}
+
+export function computeSourceAnalytics(state: FinanceState): SourceAnalytics[] {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const yearStart = new Date(now.getFullYear(), 0, 1);
+  const yearEnd = new Date(now.getFullYear() + 1, 0, 1);
+  const farPast = new Date(2000, 0, 1);
+
+  const totalThisMonth = state.incomeSources.reduce(
+    (s, src) => s + sumInRange(state.transactions, src.id, monthStart, nextMonthStart),
+    0,
+  );
+
+  // Last 6 months, per source, for a consistency (coefficient of variation) check.
+  const monthWindows: [Date, Date][] = [];
+  for (let i = 5; i >= 0; i--) {
+    const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+    monthWindows.push([start, end]);
+  }
+
+  const base = state.incomeSources.map((source) => {
+    const thisMonth = sumInRange(state.transactions, source.id, monthStart, nextMonthStart);
+    const lastMonth = sumInRange(state.transactions, source.id, lastMonthStart, monthStart);
+    const allTime = sumInRange(state.transactions, source.id, farPast, new Date(2100, 0, 1));
+    const ytd = sumInRange(state.transactions, source.id, yearStart, yearEnd);
+    const momGrowthPct = lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth) * 100 : null;
+    const pctContributionThisMonth = totalThisMonth > 0 ? (thisMonth / totalThisMonth) * 100 : 0;
+    const monthlyAmounts = monthWindows.map(([s, e]) =>
+      sumInRange(state.transactions, source.id, s, e),
+    );
+    return {
+      source,
+      allTime,
+      thisMonth,
+      lastMonth,
+      momGrowthPct,
+      ytd,
+      pctContributionThisMonth,
+      monthlyAmounts,
+    };
+  });
+
+  let bestId: string | null = null;
+  let bestVal = -1;
+  for (const b of base) {
+    if (b.thisMonth > bestVal) {
+      bestVal = b.thisMonth;
+      bestId = b.source.id;
+    }
+  }
+
+  let mostConsistentId: string | null = null;
+  let lowestCv = Infinity;
+  for (const b of base) {
+    const nonZeroMonths = b.monthlyAmounts.filter((v) => v > 0);
+    if (nonZeroMonths.length < 2) continue;
+    const mean = nonZeroMonths.reduce((s, v) => s + v, 0) / nonZeroMonths.length;
+    const variance = nonZeroMonths.reduce((s, v) => s + (v - mean) ** 2, 0) / nonZeroMonths.length;
+    const cv = mean > 0 ? Math.sqrt(variance) / mean : Infinity;
+    if (cv < lowestCv) {
+      lowestCv = cv;
+      mostConsistentId = b.source.id;
+    }
+  }
+
+  return base.map((b) => ({
+    source: b.source,
+    allTime: b.allTime,
+    thisMonth: b.thisMonth,
+    lastMonth: b.lastMonth,
+    momGrowthPct: b.momGrowthPct,
+    ytd: b.ytd,
+    pctContributionThisMonth: b.pctContributionThisMonth,
+    isBestPerforming: b.source.id === bestId && bestVal > 0,
+    isMostConsistent: b.source.id === mostConsistentId,
+  }));
+}

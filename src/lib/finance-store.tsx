@@ -12,6 +12,8 @@ import type {
   Budget,
   FinanceState,
   Goal,
+  IncomeOpportunity,
+  IncomeSource,
   Profile,
   RecurringTransaction,
   Review,
@@ -41,6 +43,8 @@ const defaultState: FinanceState = {
   reviews: [],
   budgets: [],
   recurring: [],
+  opportunities: [],
+  incomeSources: [],
 };
 
 interface Ctx {
@@ -63,6 +67,14 @@ interface Ctx {
   addRecurring: (r: Omit<RecurringTransaction, "id" | "createdAt">) => void;
   updateRecurring: (id: string, patch: Partial<RecurringTransaction>) => void;
   removeRecurring: (id: string) => void;
+  addOpportunity: (o: Omit<IncomeOpportunity, "id" | "createdAt">) => void;
+  updateOpportunity: (id: string, patch: Partial<IncomeOpportunity>) => void;
+  removeOpportunity: (id: string) => void;
+  /** Marks an opportunity paid and posts a matching income transaction to the given account. */
+  markOpportunityPaid: (id: string, accountId: string) => void;
+  addIncomeSource: (s: Omit<IncomeSource, "id" | "createdAt">) => void;
+  updateIncomeSource: (id: string, patch: Partial<IncomeSource>) => void;
+  removeIncomeSource: (id: string) => void;
   reset: () => void;
   replaceState: (next: FinanceState) => void;
   /** "local" until logged in; reflects cloud sync progress once a session exists. */
@@ -339,6 +351,61 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         })),
       removeRecurring: (id) =>
         setState((s) => ({ ...s, recurring: s.recurring.filter((r) => r.id !== id) })),
+      addOpportunity: (o) =>
+        setState((s) => ({
+          ...s,
+          opportunities: [
+            { ...o, id: uid(), createdAt: new Date().toISOString() },
+            ...s.opportunities,
+          ],
+        })),
+      updateOpportunity: (id, patch) =>
+        setState((s) => ({
+          ...s,
+          opportunities: s.opportunities.map((o) => (o.id === id ? { ...o, ...patch } : o)),
+        })),
+      removeOpportunity: (id) =>
+        setState((s) => ({ ...s, opportunities: s.opportunities.filter((o) => o.id !== id) })),
+      markOpportunityPaid: (id, accountId) =>
+        setState((s) => {
+          const opp = s.opportunities.find((o) => o.id === id);
+          if (!opp) return s;
+          const tx: Transaction = {
+            id: uid(),
+            type: "income",
+            amount: opp.amount,
+            category: "Business",
+            accountId,
+            date: new Date().toISOString(),
+            description: `Payment from ${opp.client}`,
+          };
+          return {
+            ...s,
+            accounts: applyTxToAccounts(s.accounts, tx),
+            transactions: [tx, ...s.transactions],
+            opportunities: s.opportunities.map((o) =>
+              o.id === id ? { ...o, status: "paid", paidDate: new Date().toISOString() } : o,
+            ),
+          };
+        }),
+      addIncomeSource: (src) =>
+        setState((s) => ({
+          ...s,
+          incomeSources: [
+            ...s.incomeSources,
+            { ...src, id: uid(), createdAt: new Date().toISOString() },
+          ],
+        })),
+      updateIncomeSource: (id, patch) =>
+        setState((s) => ({
+          ...s,
+          incomeSources: s.incomeSources.map((src) => (src.id === id ? { ...src, ...patch } : src)),
+        })),
+      removeIncomeSource: (id) =>
+        setState((s) => ({
+          ...s,
+          incomeSources: s.incomeSources.filter((src) => src.id !== id),
+        })),
       reset: () => setState(defaultState),
       replaceState: (next) => setState(processDueRecurring({ ...defaultState, ...next })),
       syncStatus,
