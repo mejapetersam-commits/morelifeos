@@ -1,4 +1,11 @@
-import type { FinanceState, Goal, Transaction } from "./finance-types";
+import type {
+  Account,
+  CompoundingFrequency,
+  FinanceState,
+  Goal,
+  InstitutionType,
+  Transaction,
+} from "./finance-types";
 
 export function greeting(now = new Date(), name?: string) {
   const h = now.getHours();
@@ -37,7 +44,6 @@ export function healthScore(m: FinanceMetrics, hasGoals: boolean) {
   if (hasGoals) s += 5;
   return Math.max(0, Math.min(100, s));
 }
-
 
 export function formatMoney(amount: number, currency = "KSh") {
   const sign = amount < 0 ? "-" : "";
@@ -136,16 +142,26 @@ export function generateInsights(state: FinanceState, m: FinanceMetrics): Insigh
         id: "sr-good",
         tone: "positive",
         observation: `Your savings rate is ${(m.savingsRate * 100).toFixed(0)}% this month.`,
-        explanation: "You're keeping more than 20% of income — a strong foundation for long-term wealth.",
-        options: ["Direct the surplus to a goal", "Increase an investment contribution", "Keep the current plan"],
+        explanation:
+          "You're keeping more than 20% of income — a strong foundation for long-term wealth.",
+        options: [
+          "Direct the surplus to a goal",
+          "Increase an investment contribution",
+          "Keep the current plan",
+        ],
       });
     } else if (m.savingsRate < 0.05) {
       out.push({
         id: "sr-low",
         tone: "attention",
         observation: `Your savings rate is ${(m.savingsRate * 100).toFixed(0)}% this month.`,
-        explanation: "Little is being retained after expenses, which slows progress toward your goals.",
-        options: ["Review top expense categories", "Extend a goal deadline", "Explore ways to increase income"],
+        explanation:
+          "Little is being retained after expenses, which slows progress toward your goals.",
+        options: [
+          "Review top expense categories",
+          "Extend a goal deadline",
+          "Explore ways to increase income",
+        ],
       });
     }
   }
@@ -160,8 +176,13 @@ export function generateInsights(state: FinanceState, m: FinanceMetrics): Insigh
         id: `cat-up-${cat}`,
         tone: "attention",
         observation: `${cat} spending is up ${pct}% vs last month.`,
-        explanation: "A meaningful shift here reduces the capacity available for goals and savings.",
-        options: [`Set a monthly ${cat.toLowerCase()} intention`, "Explore lower-cost alternatives", "Accept and adjust your plan"],
+        explanation:
+          "A meaningful shift here reduces the capacity available for goals and savings.",
+        options: [
+          `Set a monthly ${cat.toLowerCase()} intention`,
+          "Explore lower-cost alternatives",
+          "Accept and adjust your plan",
+        ],
       });
     }
   }
@@ -188,7 +209,10 @@ export function generateInsights(state: FinanceState, m: FinanceMetrics): Insigh
         tone: "neutral",
         observation: `You're close to your ${b.category} budget — ${Math.round((spent / b.monthlyLimit) * 100)}% used.`,
         explanation: "Worth a glance before the month closes out.",
-        options: [`Review recent ${b.category.toLowerCase()} transactions`, "Keep the current pace"],
+        options: [
+          `Review recent ${b.category.toLowerCase()} transactions`,
+          "Keep the current pace",
+        ],
       });
     }
   }
@@ -198,7 +222,8 @@ export function generateInsights(state: FinanceState, m: FinanceMetrics): Insigh
       id: "inc-up",
       tone: "positive",
       observation: "Income increased compared to last month.",
-      explanation: "Additional income unlocks options — the choice of how to use it shapes long-term outcomes.",
+      explanation:
+        "Additional income unlocks options — the choice of how to use it shapes long-term outcomes.",
       options: ["Assign it to a goal", "Increase investing", "Rebuild an emergency buffer"],
     });
   }
@@ -208,8 +233,13 @@ export function generateInsights(state: FinanceState, m: FinanceMetrics): Insigh
       id: "no-goals",
       tone: "neutral",
       observation: "You haven't defined a financial goal yet.",
-      explanation: "Goals give money direction. Even one clear goal changes how everyday choices feel.",
-      options: ["Start with an emergency fund", "Define a medium-term goal", "Set a long-term investing target"],
+      explanation:
+        "Goals give money direction. Even one clear goal changes how everyday choices feel.",
+      options: [
+        "Start with an emergency fund",
+        "Define a medium-term goal",
+        "Set a long-term investing target",
+      ],
     });
   }
 
@@ -218,7 +248,8 @@ export function generateInsights(state: FinanceState, m: FinanceMetrics): Insigh
       id: "quiet",
       tone: "neutral",
       observation: "Things look steady this month.",
-      explanation: "No unusual movements. A calm month is a good time to plan the next intentional step.",
+      explanation:
+        "No unusual movements. A calm month is a good time to plan the next intentional step.",
       options: ["Review your goals", "Reflect on the week", "Explore a new savings target"],
     });
   }
@@ -248,4 +279,100 @@ export function monthlySeries(txs: Transaction[], months = 6) {
     });
   }
   return out;
+}
+
+// ─── Investments & Savings ─────────────────────────────────────────────
+
+const PERIODS_PER_YEAR: Record<CompoundingFrequency, number> = {
+  monthly: 12,
+  quarterly: 4,
+  annually: 1,
+};
+
+/** Standard compound interest future value. rate is annual percent (e.g. 9.5, not 0.095). */
+export function futureValue(
+  principal: number,
+  annualRatePct: number,
+  years: number,
+  compounding: CompoundingFrequency = "annually",
+): number {
+  const n = PERIODS_PER_YEAR[compounding];
+  const r = annualRatePct / 100;
+  if (r <= 0 || years <= 0) return principal;
+  return principal * Math.pow(1 + r / n, n * years);
+}
+
+/**
+ * Growth accrued since the account's rate was last confirmed (or since the
+ * account existed, if never set), using its own expected annual return.
+ * This is a projection, not a real transaction — the account's "Post
+ * accrued growth" action turns it into one.
+ */
+export function accruedSinceUpdate(account: Account, now = new Date()): number {
+  if (!account.expectedAnnualReturn || account.expectedAnnualReturn <= 0) return 0;
+  const since = account.rateUpdatedAt ? new Date(account.rateUpdatedAt) : null;
+  if (!since) return 0;
+  const days = (now.getTime() - since.getTime()) / (1000 * 60 * 60 * 24);
+  if (days <= 0) return 0;
+  const years = days / 365;
+  return (
+    futureValue(
+      account.balance,
+      account.expectedAnnualReturn,
+      years,
+      account.compoundingFrequency,
+    ) - account.balance
+  );
+}
+
+export interface InvestmentSummary {
+  accounts: Account[];
+  totalInvested: number;
+  weightedAvgReturn: number; // percent
+  projected: { years: number; value: number }[];
+  byInstitutionType: { name: string; value: number }[];
+}
+
+const INSTITUTION_LABELS: Record<InstitutionType, string> = {
+  bank: "Bank / Fixed Deposit",
+  mmf: "Money Market Fund",
+  sacco: "SACCO",
+  broker: "Stocks / Broker",
+  crypto: "Crypto",
+  bond: "Government Bond / T-Bill",
+  other: "Other",
+};
+
+export function institutionLabel(t?: InstitutionType) {
+  return t ? INSTITUTION_LABELS[t] : "Other";
+}
+
+export function computeInvestmentSummary(state: FinanceState): InvestmentSummary {
+  const accounts = state.accounts.filter((a) => a.type === "investment");
+  const totalInvested = accounts.reduce((s, a) => s + a.balance, 0);
+  const weightedAvgReturn =
+    totalInvested > 0
+      ? accounts.reduce((s, a) => s + a.balance * (a.expectedAnnualReturn || 0), 0) / totalInvested
+      : 0;
+
+  const horizons = [1, 5, 10];
+  const projected = horizons.map((years) => ({
+    years,
+    value: accounts.reduce(
+      (s, a) =>
+        s + futureValue(a.balance, a.expectedAnnualReturn || 0, years, a.compoundingFrequency),
+      0,
+    ),
+  }));
+
+  const byType = new Map<string, number>();
+  for (const a of accounts) {
+    const label = institutionLabel(a.institutionType);
+    byType.set(label, (byType.get(label) || 0) + a.balance);
+  }
+  const byInstitutionType = Array.from(byType.entries())
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
+
+  return { accounts, totalInvested, weightedAvgReturn, projected, byInstitutionType };
 }

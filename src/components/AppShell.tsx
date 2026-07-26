@@ -14,6 +14,7 @@ import {
   Cloud,
   CloudOff,
   Loader2,
+  PiggyBank,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useFinance } from "@/lib/finance-store";
@@ -24,6 +25,7 @@ import { useSession, signOut } from "@/lib/auth-client";
 const nav = [
   { to: "/", label: "Overview", icon: Home },
   { to: "/money", label: "Money", icon: Wallet },
+  { to: "/investments", label: "Investments", icon: PiggyBank },
   { to: "/goals", label: "Goals", icon: Target },
   { to: "/reviews", label: "Reviews", icon: NotebookPen },
   { to: "/ai", label: "Intelligence", icon: Sparkles },

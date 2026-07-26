@@ -49,6 +49,8 @@ interface Ctx {
   addAccount: (a: Omit<Account, "id">) => void;
   updateAccount: (id: string, patch: Partial<Account>) => void;
   removeAccount: (id: string) => void;
+  /** Posts accrued interest/growth as a real income transaction and refreshes the account's rate-confirmed date. */
+  postAccountGrowth: (accountId: string, amount: number) => void;
   addTransaction: (t: Omit<Transaction, "id">) => void;
   removeTransaction: (id: string) => void;
   addGoal: (g: Omit<Goal, "id" | "createdAt">) => void;
@@ -267,6 +269,26 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           return {
             ...s,
             accounts: applyTxToAccounts(s.accounts, tx),
+            transactions: [tx, ...s.transactions],
+          };
+        }),
+      postAccountGrowth: (accountId, amount) =>
+        setState((s) => {
+          if (amount <= 0) return s;
+          const tx: Transaction = {
+            id: uid(),
+            type: "income",
+            amount,
+            category: "Investment",
+            accountId,
+            date: new Date().toISOString(),
+            description: "Interest/growth accrued",
+          };
+          return {
+            ...s,
+            accounts: applyTxToAccounts(s.accounts, tx).map((a) =>
+              a.id === accountId ? { ...a, rateUpdatedAt: new Date().toISOString() } : a,
+            ),
             transactions: [tx, ...s.transactions],
           };
         }),
