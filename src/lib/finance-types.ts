@@ -1,11 +1,23 @@
 export type AccountType = "bank" | "mobile" | "cash" | "investment";
 
+export type InstitutionType = "bank" | "mmf" | "sacco" | "broker" | "crypto" | "bond" | "other";
+export type CompoundingFrequency = "monthly" | "quarterly" | "annually";
+export type RiskLevel = "low" | "medium" | "high";
+
 export interface Account {
   id: string;
   name: string;
   type: AccountType;
   balance: number;
   currency: string;
+  // The following only apply to type === "investment" accounts.
+  institution?: string;
+  institutionType?: InstitutionType;
+  expectedAnnualReturn?: number; // percent, e.g. 9.5
+  compoundingFrequency?: CompoundingFrequency;
+  riskLevel?: RiskLevel;
+  rateUpdatedAt?: string; // ISO date — when expectedAnnualReturn was last confirmed
+  maturityDate?: string; // ISO date — for bonds/fixed-term deposits
 }
 
 export type TxType = "income" | "expense" | "transfer" | "investment";

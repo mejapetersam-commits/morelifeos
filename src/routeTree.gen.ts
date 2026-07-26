@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as GoalsRouteImport } from './routes/goals'
+import { Route as InvestmentsRouteImport } from './routes/investments'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MoneyRouteImport } from './routes/money'
 import { Route as ReviewsRouteImport } from './routes/reviews'
@@ -33,6 +34,11 @@ const AiRoute = AiRouteImport.update({
 const GoalsRoute = GoalsRouteImport.update({
   id: '/goals',
   path: '/goals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvestmentsRoute = InvestmentsRouteImport.update({
+  id: '/investments',
+  path: '/investments',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
   '/goals': typeof GoalsRoute
+  '/investments': typeof InvestmentsRoute
   '/login': typeof LoginRoute
   '/money': typeof MoneyRoute
   '/reviews': typeof ReviewsRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
   '/goals': typeof GoalsRoute
+  '/investments': typeof InvestmentsRoute
   '/login': typeof LoginRoute
   '/money': typeof MoneyRoute
   '/reviews': typeof ReviewsRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
   '/goals': typeof GoalsRoute
+  '/investments': typeof InvestmentsRoute
   '/login': typeof LoginRoute
   '/money': typeof MoneyRoute
   '/reviews': typeof ReviewsRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ai'
     | '/goals'
+    | '/investments'
     | '/login'
     | '/money'
     | '/reviews'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ai'
     | '/goals'
+    | '/investments'
     | '/login'
     | '/money'
     | '/reviews'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ai'
     | '/goals'
+    | '/investments'
     | '/login'
     | '/money'
     | '/reviews'
@@ -151,6 +163,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AiRoute: typeof AiRoute
   GoalsRoute: typeof GoalsRoute
+  InvestmentsRoute: typeof InvestmentsRoute
   LoginRoute: typeof LoginRoute
   MoneyRoute: typeof MoneyRoute
   ReviewsRoute: typeof ReviewsRoute
@@ -181,6 +194,13 @@ declare module '@tanstack/react-router' {
       path: '/goals'
       fullPath: '/goals'
       preLoaderRoute: typeof GoalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/investments': {
+      id: '/investments'
+      path: '/investments'
+      fullPath: '/investments'
+      preLoaderRoute: typeof InvestmentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -239,6 +259,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AiRoute: AiRoute,
   GoalsRoute: GoalsRoute,
+  InvestmentsRoute: InvestmentsRoute,
   LoginRoute: LoginRoute,
   MoneyRoute: MoneyRoute,
   ReviewsRoute: ReviewsRoute,
