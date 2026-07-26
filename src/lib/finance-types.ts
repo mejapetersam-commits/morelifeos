@@ -42,6 +42,8 @@ export interface Transaction {
   toAccountId?: string;
   date: string; // ISO
   description?: string;
+  /** For income transactions only — which income source this came from. */
+  sourceId?: string;
 }
 
 export interface Goal {
@@ -99,6 +101,33 @@ export interface RecurringTransaction {
   createdAt: string;
 }
 
+export type OpportunityStatus =
+  "idea" | "quoted" | "negotiating" | "confirmed" | "paid" | "cancelled";
+
+export interface IncomeOpportunity {
+  id: string;
+  client: string;
+  amount: number;
+  expectedDate: string; // ISO date
+  status: OpportunityStatus;
+  probability: number; // 0-100
+  notes?: string;
+  createdAt: string;
+  paidDate?: string;
+}
+
+export type IncomeSourceStatus = "active" | "seasonal" | "paused";
+
+export interface IncomeSource {
+  id: string;
+  name: string;
+  category: string;
+  status: IncomeSourceStatus;
+  monthlyTarget?: number;
+  annualTarget?: number;
+  createdAt: string;
+}
+
 export interface FinanceState {
   profile: Profile;
   accounts: Account[];
@@ -107,4 +136,6 @@ export interface FinanceState {
   reviews: Review[];
   budgets: Budget[];
   recurring: RecurringTransaction[];
+  opportunities: IncomeOpportunity[];
+  incomeSources: IncomeSource[];
 }

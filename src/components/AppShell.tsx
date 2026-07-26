@@ -15,6 +15,7 @@ import {
   CloudOff,
   Loader2,
   PiggyBank,
+  Briefcase,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useFinance } from "@/lib/finance-store";
@@ -26,6 +27,7 @@ const nav = [
   { to: "/", label: "Overview", icon: Home },
   { to: "/money", label: "Money", icon: Wallet },
   { to: "/investments", label: "Investments", icon: PiggyBank },
+  { to: "/income", label: "Income", icon: Briefcase },
   { to: "/goals", label: "Goals", icon: Target },
   { to: "/reviews", label: "Reviews", icon: NotebookPen },
   { to: "/ai", label: "Intelligence", icon: Sparkles },
@@ -193,14 +195,14 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/60 bg-surface-elevated/95 backdrop-blur md:hidden">
-        <div className="mx-auto flex max-w-5xl items-stretch justify-between px-2">
+        <div className="mx-auto flex max-w-5xl items-stretch overflow-x-auto px-1 [&::-webkit-scrollbar]:hidden">
           {nav.map((n) => {
             const active = n.to === "/" ? pathname === "/" : pathname.startsWith(n.to);
             return (
               <Link
                 key={n.to}
                 to={n.to}
-                className={`flex flex-1 flex-col items-center gap-1 py-3 text-[10px] ${
+                className={`flex min-w-[64px] flex-1 flex-col items-center gap-1 whitespace-nowrap px-1 py-3 text-[10px] ${
                   active ? "text-ocean" : "text-muted-foreground"
                 }`}
               >
