@@ -128,6 +128,20 @@ export interface IncomeSource {
   createdAt: string;
 }
 
+export type InboxItemType =
+  "expense" | "idea" | "investment" | "reminder" | "goal" | "task" | "note";
+
+export type InboxItemStatus = "new" | "archived";
+
+export interface InboxItem {
+  id: string;
+  content: string;
+  type: InboxItemType;
+  status: InboxItemStatus;
+  createdAt: string;
+  archivedAt?: string;
+}
+
 export interface FinanceState {
   profile: Profile;
   accounts: Account[];
@@ -138,4 +152,5 @@ export interface FinanceState {
   recurring: RecurringTransaction[];
   opportunities: IncomeOpportunity[];
   incomeSources: IncomeSource[];
+  inbox: InboxItem[];
 }
