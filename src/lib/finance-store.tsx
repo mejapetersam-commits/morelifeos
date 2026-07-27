@@ -10,6 +10,8 @@ import {
 import type {
   Account,
   Budget,
+  Decision,
+  DecisionOutcome,
   FinanceState,
   Goal,
   IncomeOpportunity,
@@ -47,6 +49,7 @@ const defaultState: FinanceState = {
   opportunities: [],
   incomeSources: [],
   inbox: [],
+  decisions: [],
 };
 
 interface Ctx {
@@ -83,6 +86,9 @@ interface Ctx {
   updateInboxItem: (id: string, patch: Partial<InboxItem>) => void;
   archiveInboxItem: (id: string) => void;
   removeInboxItem: (id: string) => void;
+  addDecision: (d: Omit<Decision, "id" | "createdAt">) => void;
+  recordDecisionOutcome: (id: string, outcome: DecisionOutcome, note?: string) => void;
+  removeDecision: (id: string) => void;
   reset: () => void;
   replaceState: (next: FinanceState) => void;
   /** "local" until logged in; reflects cloud sync progress once a session exists. */
@@ -457,6 +463,22 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         })),
       removeInboxItem: (id) =>
         setState((s) => ({ ...s, inbox: s.inbox.filter((i) => i.id !== id) })),
+      addDecision: (d) =>
+        setState((s) => ({
+          ...s,
+          decisions: [{ ...d, id: uid(), createdAt: new Date().toISOString() }, ...s.decisions],
+        })),
+      recordDecisionOutcome: (id, outcome, note) =>
+        setState((s) => ({
+          ...s,
+          decisions: s.decisions.map((d) =>
+            d.id === id
+              ? { ...d, outcome, outcomeNote: note, outcomeRecordedAt: new Date().toISOString() }
+              : d,
+          ),
+        })),
+      removeDecision: (id) =>
+        setState((s) => ({ ...s, decisions: s.decisions.filter((d) => d.id !== id) })),
       reset: () => setState(defaultState),
       replaceState: (next) => setState(processDueRecurring({ ...defaultState, ...next })),
       syncStatus,
