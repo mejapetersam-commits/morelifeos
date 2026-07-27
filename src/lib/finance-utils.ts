@@ -5,6 +5,7 @@ import type {
   Goal,
   InstitutionType,
   Transaction,
+  TxType,
 } from "./finance-types";
 
 export function greeting(now = new Date(), name?: string) {
@@ -512,4 +513,273 @@ export function computeSourceAnalytics(state: FinanceState): SourceAnalytics[] {
     isBestPerforming: b.source.id === bestId && bestVal > 0,
     isMostConsistent: b.source.id === mostConsistentId,
   }));
+}
+
+// ─── Statement / M-Pesa import ─────────────────────────────────────────
+
+export interface ParsedImportRow {
+  tempId: string;
+  date: string; // ISO
+  type: TxType;
+  amount: number;
+  category: string;
+  description: string;
+  raw: string;
+  confidence: "high" | "low";
+}
+
+function tempId() {
+  return Math.random().toString(36).slice(2, 10);
+}
+
+const CATEGORY_KEYWORDS: [RegExp, string][] = [
+  [/naivas|carrefour|quickmart|tuskys|supermarket|chandarana|greenspoon/i, "Food"],
+  [/uber|bolt|little cab|matatu|taxi|shuttle/i, "Transport"],
+  [/kplc|nairobi water|dstv|gotv|zuku|jamii ?telkom|kenya power/i, "Housing"],
+  [/safaricom|airtime|airtel ?ke/i, "Lifestyle"],
+];
+
+function guessCategory(name: string, fallback: string): string {
+  for (const [re, cat] of CATEGORY_KEYWORDS) {
+    if (re.test(name)) return cat;
+  }
+  return fallback;
+}
+
+/** M-Pesa dates are DD/MM/YY (or YYYY). Returns an ISO string, midday to avoid timezone drift. */
+function parseMpesaDate(dateStr: string, timeStr?: string): string {
+  const [d, m, yRaw] = dateStr.split("/").map((s) => parseInt(s, 10));
+  const y = yRaw < 100 ? 2000 + yRaw : yRaw;
+  let hours = 12;
+  let minutes = 0;
+  if (timeStr) {
+    const match = timeStr.match(/(\d{1,2}):(\d{2})\s*([AP]M)/i);
+    if (match) {
+      hours = parseInt(match[1], 10) % 12;
+      minutes = parseInt(match[2], 10);
+      if (/PM/i.test(match[3])) hours += 12;
+    }
+  }
+  return new Date(y, (m || 1) - 1, d || 1, hours, minutes).toISOString();
+}
+
+function parseAmount(raw: string): number {
+  return parseFloat(raw.replace(/,/g, ""));
+}
+
+/**
+ * Native `new Date(string)` parsing is ambiguous for slash-separated dates
+ * (it assumes US MM/DD/YYYY), which silently misreads the DD/MM/YYYY format
+ * common in Kenyan bank and M-Pesa exports — "20/07/2026" would otherwise
+ * parse as an invalid month and fall back to today's date. This checks
+ * unambiguous formats explicitly before ever trusting native parsing.
+ */
+function parseFlexibleDate(raw: string): string {
+  const trimmed = raw.trim();
+
+  // ISO-ish: 2026-07-20 or 2026/07/20
+  let m = trimmed.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (m) {
+    const [, y, mo, d] = m;
+    return new Date(Number(y), Number(mo) - 1, Number(d), 12).toISOString();
+  }
+
+  // Day-first: 20/07/2026, 20-07-26, etc.
+  m = trimmed.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})/);
+  if (m) {
+    const [, d, mo, yRaw] = m;
+    const y = yRaw.length === 2 ? 2000 + Number(yRaw) : Number(yRaw);
+    return new Date(y, Number(mo) - 1, Number(d), 12).toISOString();
+  }
+
+  const native = new Date(trimmed);
+  if (!isNaN(native.getTime())) return native.toISOString();
+  return new Date().toISOString();
+}
+
+const DATE_TIME_RE = /on\s+(\d{1,2}\/\d{1,2}\/\d{2,4})(?:\s+at\s+(\d{1,2}:\d{2}\s?[AP]M))?/i;
+
+/**
+ * Parses one or more pasted M-Pesa SMS confirmations into candidate
+ * transactions. Safaricom's exact wording varies by transaction type and
+ * has changed over time, so this covers the common patterns (send, receive,
+ * pay bill/till, withdraw, airtime, cash deposit) with a low-confidence
+ * fallback for anything it doesn't recognize — everything here is meant to
+ * be reviewed and edited before import, never trusted blindly.
+ */
+export function parseMpesaMessages(text: string): ParsedImportRow[] {
+  const paragraphs = text
+    .split(/\n{2,}/)
+    .map((c) => c.trim())
+    .filter(Boolean);
+
+  const chunks = paragraphs.flatMap((p) =>
+    p
+      .split(/(?=[A-Z0-9]{8,12}\s+Confirmed)/g)
+      .map((c) => c.trim())
+      .filter(Boolean),
+  );
+
+  const rows: ParsedImportRow[] = [];
+
+  for (const msg of chunks) {
+    const dateMatch = msg.match(DATE_TIME_RE);
+    const date = dateMatch ? parseMpesaDate(dateMatch[1], dateMatch[2]) : new Date().toISOString();
+
+    let m: RegExpMatchArray | null;
+
+    if ((m = msg.match(/received\s+Ksh\s?([\d,]+\.\d{2})\s+cash deposit/i))) {
+      rows.push({
+        tempId: tempId(),
+        date,
+        type: "income",
+        amount: parseAmount(m[1]),
+        category: "Income",
+        description: "M-Pesa cash deposit",
+        raw: msg,
+        confidence: "high",
+      });
+    } else if (
+      (m = msg.match(
+        /received\s+Ksh\s?([\d,]+\.\d{2})\s+from\s+([A-Z0-9'&. ]+?)\s+(?:\d{9,12})?\s*on/i,
+      ))
+    ) {
+      const name = m[2].trim();
+      rows.push({
+        tempId: tempId(),
+        date,
+        type: "income",
+        amount: parseAmount(m[1]),
+        category: "Income",
+        description: `From ${name}`,
+        raw: msg,
+        confidence: "high",
+      });
+    } else if (
+      (m = msg.match(/Ksh\s?([\d,]+\.\d{2})\s+sent to\s+([A-Z0-9'&. ]+?)\s+(?:\d{9,12})?\s*on/i))
+    ) {
+      const name = m[2].trim();
+      rows.push({
+        tempId: tempId(),
+        date,
+        type: "expense",
+        amount: parseAmount(m[1]),
+        category: guessCategory(name, "Other"),
+        description: `Sent to ${name}`,
+        raw: msg,
+        confidence: "high",
+      });
+    } else if (
+      (m = msg.match(
+        /Ksh\s?([\d,]+\.\d{2})\s+paid to\s+([A-Z0-9'&. ]+?)(?:\s+for account\s+\S+)?\s*on/i,
+      ))
+    ) {
+      const name = m[2].trim();
+      rows.push({
+        tempId: tempId(),
+        date,
+        type: "expense",
+        amount: parseAmount(m[1]),
+        category: guessCategory(name, "Other"),
+        description: `Paid ${name}`,
+        raw: msg,
+        confidence: "high",
+      });
+    } else if ((m = msg.match(/Ksh\s?([\d,]+\.\d{2})\s+withdrawn/i))) {
+      rows.push({
+        tempId: tempId(),
+        date,
+        type: "expense",
+        amount: parseAmount(m[1]),
+        category: "Cash withdrawal",
+        description: "M-Pesa cash withdrawal",
+        raw: msg,
+        confidence: "high",
+      });
+    } else if ((m = msg.match(/Ksh\s?([\d,]+\.\d{2})\s+airtime purchased/i))) {
+      rows.push({
+        tempId: tempId(),
+        date,
+        type: "expense",
+        amount: parseAmount(m[1]),
+        category: "Lifestyle",
+        description: "Airtime purchase",
+        raw: msg,
+        confidence: "high",
+      });
+    } else {
+      // Fallback: grab any Ksh amount so the row still shows up for manual
+      // fixing, rather than silently dropping a message we don't recognize.
+      const anyAmount = msg.match(/Ksh\s?([\d,]+\.\d{2})/i);
+      if (anyAmount) {
+        rows.push({
+          tempId: tempId(),
+          date,
+          type: "expense",
+          amount: parseAmount(anyAmount[1]),
+          category: "Other",
+          description: msg.slice(0, 60),
+          raw: msg,
+          confidence: "low",
+        });
+      }
+    }
+  }
+
+  return rows;
+}
+
+export interface CsvColumnMapping {
+  date: number;
+  description: number;
+  amount: number;
+  /** If set, amount's sign/column alone isn't enough — a separate "money out" column marks expenses. */
+  amountOut?: number;
+}
+
+/**
+ * Converts raw CSV rows (already split into cells, header excluded) into
+ * candidate transactions using a user-confirmed column mapping — bank CSV
+ * formats vary too much to guess reliably.
+ */
+export function parseCsvRows(rows: string[][], mapping: CsvColumnMapping): ParsedImportRow[] {
+  const out: ParsedImportRow[] = [];
+  for (const row of rows) {
+    const rawDate = row[mapping.date]?.trim();
+    const description = row[mapping.description]?.trim() || "Imported transaction";
+    if (!rawDate) continue;
+
+    let amount = 0;
+    let type: TxType = "expense";
+    if (mapping.amountOut !== undefined) {
+      const inVal = parseFloat((row[mapping.amount] || "0").replace(/[^0-9.-]/g, "")) || 0;
+      const outVal = parseFloat((row[mapping.amountOut] || "0").replace(/[^0-9.-]/g, "")) || 0;
+      if (outVal > 0) {
+        amount = outVal;
+        type = "expense";
+      } else {
+        amount = inVal;
+        type = "income";
+      }
+    } else {
+      const raw = parseFloat((row[mapping.amount] || "0").replace(/[^0-9.-]/g, "")) || 0;
+      type = raw < 0 ? "expense" : "income";
+      amount = Math.abs(raw);
+    }
+    if (amount <= 0) continue;
+
+    const date = parseFlexibleDate(rawDate);
+
+    out.push({
+      tempId: tempId(),
+      date,
+      type,
+      amount,
+      category: type === "income" ? "Income" : guessCategory(description, "Other"),
+      description,
+      raw: row.join(" | "),
+      confidence: "high",
+    });
+  }
+  return out;
 }
