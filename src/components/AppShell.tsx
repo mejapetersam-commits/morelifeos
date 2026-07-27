@@ -16,18 +16,23 @@ import {
   Loader2,
   PiggyBank,
   Briefcase,
+  Inbox as InboxIcon,
+  Plus,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useFinance } from "@/lib/finance-store";
 import { computeMetrics } from "@/lib/finance-utils";
 import { useTheme } from "@/lib/theme";
 import { useSession, signOut } from "@/lib/auth-client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CaptureBar } from "@/components/CaptureBar";
 
 const nav = [
   { to: "/", label: "Overview", icon: Home },
   { to: "/money", label: "Money", icon: Wallet },
   { to: "/investments", label: "Investments", icon: PiggyBank },
   { to: "/income", label: "Income", icon: Briefcase },
+  { to: "/inbox", label: "Inbox", icon: InboxIcon },
   { to: "/goals", label: "Goals", icon: Target },
   { to: "/reviews", label: "Reviews", icon: NotebookPen },
   { to: "/ai", label: "Intelligence", icon: Sparkles },
@@ -213,6 +218,35 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </div>
       </nav>
+
+      <QuickCaptureButton />
     </div>
+  );
+}
+
+function QuickCaptureButton() {
+  const { addInboxItem } = useFinance();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <button
+        onClick={() => setOpen(true)}
+        aria-label="Quick capture"
+        className="fixed bottom-20 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-ocean text-ocean-foreground shadow-lift transition-transform hover:scale-105 md:bottom-8 md:right-8"
+      >
+        <Plus className="h-6 w-6" />
+      </button>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Quick capture</DialogTitle>
+        </DialogHeader>
+        <CaptureBar
+          compact
+          onCapture={(content, type) => addInboxItem({ content, type })}
+          onDone={() => setOpen(false)}
+        />
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as GoalsRouteImport } from './routes/goals'
+import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as IncomeRouteImport } from './routes/income'
 import { Route as InvestmentsRouteImport } from './routes/investments'
 import { Route as LoginRouteImport } from './routes/login'
@@ -35,6 +36,11 @@ const AiRoute = AiRouteImport.update({
 const GoalsRoute = GoalsRouteImport.update({
   id: '/goals',
   path: '/goals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InboxRoute = InboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IncomeRoute = IncomeRouteImport.update({
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
   '/goals': typeof GoalsRoute
+  '/inbox': typeof InboxRoute
   '/income': typeof IncomeRoute
   '/investments': typeof InvestmentsRoute
   '/login': typeof LoginRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
   '/goals': typeof GoalsRoute
+  '/inbox': typeof InboxRoute
   '/income': typeof IncomeRoute
   '/investments': typeof InvestmentsRoute
   '/login': typeof LoginRoute
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
   '/goals': typeof GoalsRoute
+  '/inbox': typeof InboxRoute
   '/income': typeof IncomeRoute
   '/investments': typeof InvestmentsRoute
   '/login': typeof LoginRoute
@@ -132,6 +141,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ai'
     | '/goals'
+    | '/inbox'
     | '/income'
     | '/investments'
     | '/login'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ai'
     | '/goals'
+    | '/inbox'
     | '/income'
     | '/investments'
     | '/login'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ai'
     | '/goals'
+    | '/inbox'
     | '/income'
     | '/investments'
     | '/login'
@@ -175,6 +187,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AiRoute: typeof AiRoute
   GoalsRoute: typeof GoalsRoute
+  InboxRoute: typeof InboxRoute
   IncomeRoute: typeof IncomeRoute
   InvestmentsRoute: typeof InvestmentsRoute
   LoginRoute: typeof LoginRoute
@@ -207,6 +220,13 @@ declare module '@tanstack/react-router' {
       path: '/goals'
       fullPath: '/goals'
       preLoaderRoute: typeof GoalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inbox': {
+      id: '/inbox'
+      path: '/inbox'
+      fullPath: '/inbox'
+      preLoaderRoute: typeof InboxRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/income': {
@@ -279,6 +299,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AiRoute: AiRoute,
   GoalsRoute: GoalsRoute,
+  InboxRoute: InboxRoute,
   IncomeRoute: IncomeRoute,
   InvestmentsRoute: InvestmentsRoute,
   LoginRoute: LoginRoute,

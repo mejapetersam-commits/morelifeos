@@ -14,6 +14,7 @@ import type {
   Goal,
   IncomeOpportunity,
   IncomeSource,
+  InboxItem,
   Profile,
   RecurringTransaction,
   Review,
@@ -45,6 +46,7 @@ const defaultState: FinanceState = {
   recurring: [],
   opportunities: [],
   incomeSources: [],
+  inbox: [],
 };
 
 interface Ctx {
@@ -75,6 +77,10 @@ interface Ctx {
   addIncomeSource: (s: Omit<IncomeSource, "id" | "createdAt">) => void;
   updateIncomeSource: (id: string, patch: Partial<IncomeSource>) => void;
   removeIncomeSource: (id: string) => void;
+  addInboxItem: (item: Omit<InboxItem, "id" | "createdAt" | "status">) => void;
+  updateInboxItem: (id: string, patch: Partial<InboxItem>) => void;
+  archiveInboxItem: (id: string) => void;
+  removeInboxItem: (id: string) => void;
   reset: () => void;
   replaceState: (next: FinanceState) => void;
   /** "local" until logged in; reflects cloud sync progress once a session exists. */
@@ -406,6 +412,28 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           ...s,
           incomeSources: s.incomeSources.filter((src) => src.id !== id),
         })),
+      addInboxItem: (item) =>
+        setState((s) => ({
+          ...s,
+          inbox: [
+            { ...item, id: uid(), status: "new", createdAt: new Date().toISOString() },
+            ...s.inbox,
+          ],
+        })),
+      updateInboxItem: (id, patch) =>
+        setState((s) => ({
+          ...s,
+          inbox: s.inbox.map((i) => (i.id === id ? { ...i, ...patch } : i)),
+        })),
+      archiveInboxItem: (id) =>
+        setState((s) => ({
+          ...s,
+          inbox: s.inbox.map((i) =>
+            i.id === id ? { ...i, status: "archived", archivedAt: new Date().toISOString() } : i,
+          ),
+        })),
+      removeInboxItem: (id) =>
+        setState((s) => ({ ...s, inbox: s.inbox.filter((i) => i.id !== id) })),
       reset: () => setState(defaultState),
       replaceState: (next) => setState(processDueRecurring({ ...defaultState, ...next })),
       syncStatus,
