@@ -5,6 +5,7 @@ import { useFinance } from "@/lib/finance-store";
 import { useSession } from "@/lib/auth-client";
 import {
   computeMetrics,
+  computeSafeToSpend,
   formatMoney,
   formatPct,
   generateInsights,
@@ -74,6 +75,7 @@ function Home() {
   const netWorth = m.netWorth;
   const monthlySurplus = m.monthIncome - m.monthExpenses;
   const surplusEstimate = monthlySurplus > 0 ? monthlySurplus : m.monthIncome * 0.1;
+  const sts = computeSafeToSpend(state, m.availableCash);
 
   // Sparklines
   const sparkNet = series.map((s) => s.net + m.netWorth * 0.9);
@@ -160,6 +162,45 @@ function Home() {
                 value={<span className="num">{Math.round(m.savingsRate * 100)}%</span>}
                 sub={healthLabel}
               />
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Safe to Spend ───────────────────────────────────── */}
+        <section className="mt-8">
+          <div className="rounded-3xl bg-surface-elevated p-7 shadow-soft">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                  Safe to spend
+                </div>
+                <div className="mt-1 font-display text-3xl font-semibold num">
+                  {formatMoney(Math.max(0, sts.safeToSpend), currency)}
+                </div>
+                <p className="mt-2 max-w-md text-sm text-muted-foreground">
+                  {sts.safeToSpend >= 0
+                    ? "What's left to spend after bills due in the next 30 days and this month's goal contributions."
+                    : "Bills and goal contributions due soon add up to more than your available cash right now — worth a look before spending freely."}
+                </p>
+              </div>
+              <div className="flex gap-6 text-sm">
+                <div>
+                  <div className="text-xs text-muted-foreground">Liquid balance</div>
+                  <div className="num font-medium">{formatMoney(sts.liquidBalance, currency)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Bills (30d)</div>
+                  <div className="num font-medium text-coral">
+                    − {formatMoney(sts.upcomingBills, currency)}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Goal reserve</div>
+                  <div className="num font-medium text-royal">
+                    − {formatMoney(sts.goalReserve, currency)}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>

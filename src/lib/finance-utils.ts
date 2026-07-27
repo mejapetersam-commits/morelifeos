@@ -783,3 +783,56 @@ export function parseCsvRows(rows: string[][], mapping: CsvColumnMapping): Parse
   }
   return out;
 }
+
+// ─── Safe to spend ─────────────────────────────────────────────────────
+
+export interface SafeToSpendResult {
+  liquidBalance: number;
+  upcomingBills: number;
+  goalReserve: number;
+  safeToSpend: number;
+  windowDays: number;
+}
+
+function monthsUntil(deadline: string, now: Date): number {
+  const d = new Date(deadline);
+  const months = (d.getFullYear() - now.getFullYear()) * 12 + (d.getMonth() - now.getMonth());
+  return Math.max(1, months);
+}
+
+/**
+ * What's actually free to spend right now, after money that's already
+ * spoken for: bills due in the next `windowDays` (from active recurring
+ * expenses) and the monthly contribution each goal needs to stay on track
+ * for its deadline. This is deliberately conservative — it doesn't touch
+ * investment-account balances (those aren't liquid for daily spending) and
+ * doesn't try to net out budgets, since a budget is a spending ceiling, not
+ * money that's already committed elsewhere.
+ */
+export function computeSafeToSpend(
+  state: FinanceState,
+  liquidBalance: number,
+  windowDays = 30,
+): SafeToSpendResult {
+  const now = new Date();
+  const windowEnd = new Date(now.getTime() + windowDays * 24 * 60 * 60 * 1000);
+
+  const upcomingBills = state.recurring
+    .filter((r) => r.active && r.type === "expense")
+    .filter((r) => {
+      const due = new Date(r.nextDate);
+      return due >= now && due <= windowEnd;
+    })
+    .reduce((s, r) => s + r.amount, 0);
+
+  const goalReserve = state.goals.reduce((s, g) => {
+    const remaining = Math.max(0, g.target - g.saved);
+    if (remaining <= 0) return s;
+    const months = monthsUntil(g.deadline, now);
+    return s + remaining / months;
+  }, 0);
+
+  const safeToSpend = liquidBalance - upcomingBills - goalReserve;
+
+  return { liquidBalance, upcomingBills, goalReserve, safeToSpend, windowDays };
+}
