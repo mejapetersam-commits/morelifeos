@@ -262,13 +262,23 @@ export function ProgressRing({
         <div className={cn("font-display text-2xl font-semibold num", accentText[accent])}>
           {Math.round(p * 100)}%
         </div>
-        {label && <div className="mt-0.5 text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>}
+        {label && (
+          <div className="mt-0.5 text-[10px] uppercase tracking-widest text-muted-foreground">
+            {label}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-export function InsightCard({ insight }: { insight: Insight }) {
+export function InsightCard({
+  insight,
+  onSaveOption,
+}: {
+  insight: Insight;
+  onSaveOption?: (text: string) => void;
+}) {
   const dot =
     insight.tone === "positive"
       ? "bg-sage"
@@ -287,12 +297,8 @@ export function InsightCard({ insight }: { insight: Insight }) {
         <span className={`h-2 w-2 rounded-full ${dot}`} />
         {label}
       </div>
-      <p className="mt-3 font-display text-lg font-semibold leading-snug">
-        {insight.observation}
-      </p>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-        {insight.explanation}
-      </p>
+      <p className="mt-3 font-display text-lg font-semibold leading-snug">{insight.observation}</p>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{insight.explanation}</p>
       <div className="mt-4 space-y-2">
         <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           You could
@@ -300,9 +306,18 @@ export function InsightCard({ insight }: { insight: Insight }) {
         {insight.options.map((o, i) => (
           <div
             key={i}
-            className="rounded-lg border border-border/60 bg-background px-3 py-2 text-sm"
+            className="flex items-center gap-2 rounded-lg border border-border/60 bg-background px-3 py-2 text-sm"
           >
-            {o}
+            <span className="flex-1">{o}</span>
+            {onSaveOption && (
+              <button
+                onClick={() => onSaveOption(o)}
+                className="shrink-0 rounded-md px-2 py-1 text-[11px] font-medium text-ocean hover:bg-ocean/10"
+                aria-label="Save to Inbox"
+              >
+                Save
+              </button>
+            )}
           </div>
         ))}
       </div>

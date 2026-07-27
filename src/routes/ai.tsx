@@ -4,6 +4,7 @@ import { InsightCard, SectionHeader } from "@/components/finance-cards";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { useFinance } from "@/lib/finance-store";
 import { computeMetrics, formatMoney, generateInsights } from "@/lib/finance-utils";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/ai")({
   head: () => ({
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/ai")({
 });
 
 function AiPage() {
-  const { state } = useFinance();
+  const { state, addInboxItem } = useFinance();
   const m = computeMetrics(state);
   const insights = generateInsights(state, m);
   const currency = state.profile.currency;
@@ -42,15 +43,27 @@ function AiPage() {
 
         <div className="grid gap-4 md:grid-cols-2">
           {insights.map((i) => (
-            <InsightCard key={i.id} insight={i} />
+            <InsightCard
+              key={i.id}
+              insight={i}
+              onSaveOption={(text) => {
+                addInboxItem({ content: text, type: "reminder" });
+                toast.success("Saved to Inbox");
+              }}
+            />
           ))}
         </div>
 
         <div className="mt-10 rounded-2xl border border-border/60 bg-surface p-6 text-sm text-muted-foreground">
           <div className="font-display text-base font-semibold text-foreground">How this works</div>
           <ul className="mt-3 space-y-2 leading-relaxed">
-            <li>• Every observation is derived from your recorded activity — nothing is invented.</li>
-            <li>• You will always see an option to accept, adjust the plan, or reject the framing.</li>
+            <li>
+              • Every observation is derived from your recorded activity — nothing is invented.
+            </li>
+            <li>
+              • Save any suggestion to your Inbox to act on later — nothing changes automatically,
+              and doing nothing is a valid choice.
+            </li>
             <li>• FinanceOS avoids shame and never makes irreversible changes on your behalf.</li>
           </ul>
         </div>

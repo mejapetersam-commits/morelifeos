@@ -62,6 +62,8 @@ interface Ctx {
   addGoal: (g: Omit<Goal, "id" | "createdAt">) => void;
   updateGoal: (id: string, patch: Partial<Goal>) => void;
   removeGoal: (id: string) => void;
+  /** Moves real money from an account into a goal — posts a transaction, doesn't just bump a number. */
+  contributeToGoal: (goalId: string, accountId: string, amount: number) => void;
   addReview: (r: Omit<Review, "id" | "createdAt">) => void;
   addBudget: (b: Omit<Budget, "id">) => void;
   updateBudget: (id: string, patch: Partial<Budget>) => void;
@@ -332,6 +334,27 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           goals: s.goals.map((g) => (g.id === id ? { ...g, ...patch } : g)),
         })),
       removeGoal: (id) => setState((s) => ({ ...s, goals: s.goals.filter((g) => g.id !== id) })),
+      contributeToGoal: (goalId, accountId, amount) =>
+        setState((s) => {
+          if (amount <= 0) return s;
+          const goal = s.goals.find((g) => g.id === goalId);
+          if (!goal) return s;
+          const tx: Transaction = {
+            id: uid(),
+            type: "expense",
+            amount,
+            category: "Savings",
+            accountId,
+            date: new Date().toISOString(),
+            description: `Contribution to ${goal.name}`,
+          };
+          return {
+            ...s,
+            accounts: applyTxToAccounts(s.accounts, tx),
+            transactions: [tx, ...s.transactions],
+            goals: s.goals.map((g) => (g.id === goalId ? { ...g, saved: g.saved + amount } : g)),
+          };
+        }),
       addReview: (r) =>
         setState((s) => ({
           ...s,

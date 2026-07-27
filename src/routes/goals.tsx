@@ -5,12 +5,26 @@ import { SectionHeader } from "@/components/finance-cards";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { useFinance } from "@/lib/finance-store";
 import { formatMoney } from "@/lib/finance-utils";
+import type { Account, Goal } from "@/lib/finance-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Trash2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Plus, Trash2, Pencil } from "lucide-react";
 
 export const Route = createFileRoute("/goals")({
   head: () => ({
@@ -32,7 +46,7 @@ function monthsBetween(a: Date, b: Date) {
 }
 
 function Goals() {
-  const { state, addGoal, updateGoal, removeGoal } = useFinance();
+  const { state, addGoal, updateGoal, removeGoal, contributeToGoal } = useFinance();
   const currency = state.profile.currency;
 
   return (
@@ -48,8 +62,8 @@ function Goals() {
         {state.goals.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-surface p-12 text-center">
             <p className="text-sm text-muted-foreground">
-              You haven't set a goal yet. Start with something meaningful — an emergency fund,
-              an asset, or a business seed.
+              You haven't set a goal yet. Start with something meaningful — an emergency fund, an
+              asset, or a business seed.
             </p>
           </div>
         ) : (
@@ -67,12 +81,16 @@ function Goals() {
                         Deadline {new Date(g.deadline).toLocaleDateString()}
                       </div>
                     </div>
-                    <button
-                      onClick={() => removeGoal(g.id)}
-                      className="rounded p-2 text-muted-foreground hover:bg-accent"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <div className="flex gap-1">
+                      <EditGoalDialog goal={g} onSave={(patch) => updateGoal(g.id, patch)} />
+                      <button
+                        onClick={() => removeGoal(g.id)}
+                        className="rounded p-2 text-muted-foreground hover:bg-accent"
+                        aria-label="Delete goal"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                   <div className="mt-5">
                     <div className="flex items-baseline justify-between text-sm">
@@ -101,7 +119,8 @@ function Goals() {
                     </div>
                   </div>
                   <AddContribution
-                    onAdd={(v) => updateGoal(g.id, { saved: g.saved + v })}
+                    accounts={state.accounts}
+                    onAdd={(accountId, amount) => contributeToGoal(g.id, accountId, amount)}
                     currency={currency}
                   />
                 </div>
@@ -115,32 +134,60 @@ function Goals() {
 }
 
 function AddContribution({
+  accounts,
   onAdd,
   currency,
 }: {
-  onAdd: (v: number) => void;
+  accounts: Account[];
+  onAdd: (accountId: string, amount: number) => void;
   currency: string;
 }) {
   const [v, setV] = useState("");
+  const [accountId, setAccountId] = useState(accounts[0]?.id || "");
+
+  if (accounts.length === 0) {
+    return (
+      <p className="mt-4 text-xs text-muted-foreground">
+        Add an account on the Money page first — a contribution needs to come from somewhere.
+      </p>
+    );
+  }
+
+  const submit = () => {
+    if (Number(v) > 0 && accountId) {
+      onAdd(accountId, Number(v));
+      setV("");
+    }
+  };
+
   return (
-    <div className="mt-4 flex gap-2">
-      <Input
-        placeholder={`Add contribution (${currency})`}
-        inputMode="numeric"
-        value={v}
-        onChange={(e) => setV(e.target.value)}
-      />
-      <Button
-        onClick={() => {
-          if (Number(v) > 0) {
-            onAdd(Number(v));
-            setV("");
-          }
-        }}
-        className="bg-sage text-sage-foreground hover:bg-sage/90"
-      >
-        Add
-      </Button>
+    <div className="mt-4 space-y-2">
+      <div className="flex gap-2">
+        <Input
+          placeholder={`Amount (${currency})`}
+          inputMode="numeric"
+          value={v}
+          onChange={(e) => setV(e.target.value)}
+        />
+        <Button onClick={submit} className="bg-sage text-sage-foreground hover:bg-sage/90 shrink-0">
+          Add
+        </Button>
+      </div>
+      <Select value={accountId} onValueChange={setAccountId}>
+        <SelectTrigger className="h-8 text-xs">
+          <SelectValue placeholder="From account" />
+        </SelectTrigger>
+        <SelectContent>
+          {accounts.map((a) => (
+            <SelectItem key={a.id} value={a.id}>
+              {a.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <p className="text-[11px] text-muted-foreground">
+        This moves real money — it posts a transaction and reduces the account's balance.
+      </p>
     </div>
   );
 }
@@ -186,12 +233,20 @@ function AddGoalDialog({
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label>Goal name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Emergency fund" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Emergency fund"
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Target amount</Label>
-              <Input inputMode="numeric" value={target} onChange={(e) => setTarget(e.target.value)} />
+              <Input
+                inputMode="numeric"
+                value={target}
+                onChange={(e) => setTarget(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Already saved</Label>
@@ -202,8 +257,89 @@ function AddGoalDialog({
             <Label>Target date</Label>
             <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
           </div>
-          <Button onClick={submit} className="w-full bg-ocean text-ocean-foreground hover:bg-ocean/90">
+          <p className="text-xs text-muted-foreground">
+            "Already saved" is a starting point only, not linked to a transaction — use "Add
+            contribution" afterwards for amounts that should move real money.
+          </p>
+          <Button
+            onClick={submit}
+            className="w-full bg-ocean text-ocean-foreground hover:bg-ocean/90"
+          >
             Create goal
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditGoalDialog({
+  goal,
+  onSave,
+}: {
+  goal: Goal;
+  onSave: (patch: { name: string; target: number; deadline: string }) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(goal.name);
+  const [target, setTarget] = useState(String(goal.target));
+  const [deadline, setDeadline] = useState(goal.deadline.slice(0, 10));
+
+  const openWithReset = (next: boolean) => {
+    if (next) {
+      setName(goal.name);
+      setTarget(String(goal.target));
+      setDeadline(goal.deadline.slice(0, 10));
+    }
+    setOpen(next);
+  };
+
+  const submit = () => {
+    if (!name.trim() || !Number(target)) return;
+    onSave({
+      name: name.trim(),
+      target: Number(target),
+      deadline: new Date(deadline).toISOString(),
+    });
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={openWithReset}>
+      <DialogTrigger asChild>
+        <button
+          className="rounded p-2 text-muted-foreground hover:bg-accent"
+          aria-label="Edit goal"
+        >
+          <Pencil className="h-4 w-4" />
+        </button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit goal</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label>Goal name</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Target amount</Label>
+            <Input inputMode="numeric" value={target} onChange={(e) => setTarget(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Target date</Label>
+            <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            To change the saved amount, use "Add contribution" on the goal card instead — that keeps
+            it linked to a real transaction.
+          </p>
+          <Button
+            onClick={submit}
+            className="w-full bg-ocean text-ocean-foreground hover:bg-ocean/90"
+          >
+            Save changes
           </Button>
         </div>
       </DialogContent>
