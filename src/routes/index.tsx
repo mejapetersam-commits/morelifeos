@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { useFinance } from "@/lib/finance-store";
@@ -16,6 +17,7 @@ import {
   pct,
 } from "@/lib/finance-utils";
 import { AnimatedMoney, KpiCard, ProgressRing, SectionTitle } from "@/components/finance-cards";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -40,6 +42,7 @@ import {
   Receipt,
   TrendingUp,
   ShieldCheck,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -96,13 +99,22 @@ function Home() {
   const hero = heroCopy(state, m);
 
   // Recent activity
-  const recent = state.transactions.slice(0, 5);
+  const recent = state.transactions.slice(0, 4);
 
   // Upcoming bills — sourced from real recurring transactions (Money > Recurring)
   const bills = deriveUpcomingBills(state);
 
   const topGoal = state.goals[0];
   const eta = topGoal ? goalEta(topGoal, surplusEstimate) : null;
+
+  // Reflection banner only shows when a review is actually due — no
+  // reviews yet, or the most recent one is 7+ days old.
+  const [reflectionDismissed, setReflectionDismissed] = useState(false);
+  const lastReview = state.reviews[0];
+  const daysSinceLastReview = lastReview
+    ? (now.getTime() - new Date(lastReview.weekOf).getTime()) / (1000 * 60 * 60 * 24)
+    : Infinity;
+  const reviewDue = daysSinceLastReview >= 7;
 
   const categoryData = Object.entries(m.byCategory)
     .map(([name, value]) => ({ name, value }))
@@ -143,26 +155,6 @@ function Home() {
             <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-ocean-foreground/70">
               {hero.body}
             </p>
-
-            <div className="mt-8 grid grid-cols-2 gap-x-8 gap-y-5 md:grid-cols-4 md:max-w-3xl">
-              <HeroStat
-                label="Net Worth"
-                value={<AnimatedMoney value={netWorth} currency={currency} />}
-              />
-              <HeroStat
-                label="Available Cash"
-                value={<AnimatedMoney value={m.availableCash} currency={currency} />}
-              />
-              <HeroStat
-                label="Monthly Income"
-                value={<AnimatedMoney value={m.monthIncome} currency={currency} />}
-              />
-              <HeroStat
-                label="Savings Rate"
-                value={<span className="num">{Math.round(m.savingsRate * 100)}%</span>}
-                sub={healthLabel}
-              />
-            </div>
           </div>
         </section>
 
@@ -297,109 +289,190 @@ function Home() {
         </section>
 
         {/* ─── Financial Intelligence ──────────────────────────── */}
-        <section className="mt-12">
-          <SectionTitle
-            eyebrow="Financial Intelligence"
-            title="What deserves your attention"
-            action={
-              <Link
-                to="/ai"
-                className="inline-flex items-center gap-1 text-sm font-medium text-indigo hover:opacity-80"
-              >
-                Open Intelligence <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            }
-          />
-          <div className="relative overflow-hidden rounded-3xl bg-surface-elevated p-8 shadow-lift">
-            <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-indigo/10 blur-3xl" />
-            <div className="relative grid gap-6 md:grid-cols-3">
-              {insights.slice(0, 3).map((i, idx) => (
-                <IntelligenceItem key={i.id} insight={i} index={idx} />
-              ))}
+        {insights.length > 0 && (
+          <section className="mt-12">
+            <SectionTitle
+              eyebrow="Financial Intelligence"
+              title="What deserves your attention"
+              action={
+                <Link
+                  to="/ai"
+                  className="inline-flex items-center gap-1 text-sm font-medium text-indigo hover:opacity-80"
+                >
+                  See all insights <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              }
+            />
+            <div className="relative overflow-hidden rounded-3xl bg-surface-elevated p-8 shadow-lift">
+              <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-indigo/10 blur-3xl" />
+              <div className="relative max-w-xl">
+                <IntelligenceItem insight={insights[0]} index={0} />
+              </div>
+              <p className="relative mt-8 text-[12px] italic text-muted-foreground">
+                FinanceOS observes and explains. You decide.
+              </p>
             </div>
-            <p className="relative mt-8 text-[12px] italic text-muted-foreground">
-              FinanceOS observes and explains. You decide.
-            </p>
-          </div>
-        </section>
+          </section>
+        )}
 
-        {/* ─── Cash Flow + Goal ────────────────────────────────── */}
+        {/* ─── Cash Flow / Spending + Goal ─────────────────────── */}
         <section className="mt-12 grid gap-6 lg:grid-cols-5">
           <div className="lg:col-span-3 rounded-3xl bg-surface-elevated p-7 shadow-soft">
-            <div className="flex items-start justify-between">
-              <div>
+            <Tabs defaultValue="cashflow">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                  Cash Flow — six months
+                  Cash Flow &amp; Spending
                 </div>
-                <div className="mt-2 flex items-baseline gap-3">
-                  <span className="font-display text-3xl font-semibold num">
-                    {formatMoney(monthlySurplus, currency)}
-                  </span>
-                  <span className="text-sm text-muted-foreground">net this month</span>
+                <TabsList>
+                  <TabsTrigger value="cashflow">Cash Flow</TabsTrigger>
+                  <TabsTrigger value="category">By Category</TabsTrigger>
+                </TabsList>
+              </div>
+
+              <TabsContent value="cashflow" className="mt-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-baseline gap-3">
+                    <span className="font-display text-3xl font-semibold num">
+                      {formatMoney(monthlySurplus, currency)}
+                    </span>
+                    <span className="text-sm text-muted-foreground">net this month</span>
+                  </div>
+                  <div className="hidden items-center gap-4 text-[11px] uppercase tracking-widest text-muted-foreground md:flex">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-emerald" /> Income
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-coral" /> Expenses
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="hidden items-center gap-4 text-[11px] uppercase tracking-widest text-muted-foreground md:flex">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald" /> Income
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-coral" /> Expenses
-                </span>
-              </div>
-            </div>
-            <div className="mt-6 h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={series} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="inGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--emerald)" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="var(--emerald)" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="outGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--coral)" stopOpacity={0.28} />
-                      <stop offset="100%" stopColor="var(--coral)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="var(--border)" strokeDasharray="2 4" vertical={false} />
-                  <XAxis
-                    dataKey="label"
-                    stroke="var(--muted-foreground)"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    dy={6}
+                <div className="mt-6 h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={series} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="inGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--emerald)" stopOpacity={0.35} />
+                          <stop offset="100%" stopColor="var(--emerald)" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="outGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--coral)" stopOpacity={0.28} />
+                          <stop offset="100%" stopColor="var(--coral)" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        stroke="var(--border)"
+                        strokeDasharray="2 4"
+                        vertical={false}
+                      />
+                      <XAxis
+                        dataKey="label"
+                        stroke="var(--muted-foreground)"
+                        fontSize={11}
+                        tickLine={false}
+                        axisLine={false}
+                        dy={6}
+                      />
+                      <YAxis hide />
+                      <Tooltip
+                        cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
+                        contentStyle={{
+                          background: "var(--card)",
+                          border: "1px solid var(--border)",
+                          borderRadius: 12,
+                          fontSize: 12,
+                          boxShadow: "var(--shadow-lift)",
+                        }}
+                        formatter={(v: number, k: string) => [formatMoney(v, currency), k]}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="income"
+                        stroke="var(--emerald)"
+                        strokeWidth={2}
+                        fill="url(#inGrad)"
+                        animationDuration={900}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="expenses"
+                        stroke="var(--coral)"
+                        strokeWidth={2}
+                        fill="url(#outGrad)"
+                        animationDuration={900}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="category" className="mt-4">
+                {categoryData.length === 0 ? (
+                  <EmptyState
+                    icon={PiggyBank}
+                    title="No expenses recorded this month yet."
+                    body="Once you log a few, this breaks down where your money is actually going."
                   />
-                  <YAxis hide />
-                  <Tooltip
-                    cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
-                    contentStyle={{
-                      background: "var(--card)",
-                      border: "1px solid var(--border)",
-                      borderRadius: 12,
-                      fontSize: 12,
-                      boxShadow: "var(--shadow-lift)",
-                    }}
-                    formatter={(v: number, k: string) => [formatMoney(v, currency), k]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="income"
-                    stroke="var(--emerald)"
-                    strokeWidth={2}
-                    fill="url(#inGrad)"
-                    animationDuration={900}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="expenses"
-                    stroke="var(--coral)"
-                    strokeWidth={2}
-                    fill="url(#outGrad)"
-                    animationDuration={900}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-8 md:flex-row">
+                    <div className="h-56 w-56 shrink-0">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={categoryData}
+                            dataKey="value"
+                            nameKey="name"
+                            innerRadius={58}
+                            outerRadius={90}
+                            paddingAngle={2}
+                            strokeWidth={0}
+                            animationDuration={900}
+                          >
+                            {categoryData.map((_, i) => (
+                              <Cell key={i} fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{
+                              background: "var(--card)",
+                              border: "1px solid var(--border)",
+                              borderRadius: 12,
+                              fontSize: 12,
+                              boxShadow: "var(--shadow-lift)",
+                            }}
+                            formatter={(v: number) => formatMoney(v, currency)}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <ul className="w-full space-y-2.5">
+                      {categoryData.map((c, i) => {
+                        const share = m.monthExpenses > 0 ? c.value / m.monthExpenses : 0;
+                        return (
+                          <li
+                            key={c.name}
+                            className="flex items-center justify-between text-[13px]"
+                          >
+                            <span className="flex items-center gap-2.5">
+                              <span
+                                className="h-2.5 w-2.5 rounded-full"
+                                style={{ background: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }}
+                              />
+                              {c.name}
+                              <span className="text-muted-foreground">
+                                {Math.round(share * 100)}%
+                              </span>
+                            </span>
+                            <span className="num font-semibold">
+                              {formatMoney(c.value, currency)}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
 
           <div className="lg:col-span-2 rounded-3xl bg-surface-elevated p-7 shadow-soft">
@@ -444,71 +517,6 @@ function Home() {
                 body="Goals give money direction. Even one clear goal changes how everyday choices feel."
                 cta={{ to: "/goals", label: "Create your first goal" }}
               />
-            )}
-          </div>
-        </section>
-
-        {/* ─── Spending by Category ────────────────────────────── */}
-        <section className="mt-12">
-          <SectionTitle eyebrow="This month" title="Where it went" />
-          <div className="rounded-3xl bg-surface-elevated p-7 shadow-soft">
-            {categoryData.length === 0 ? (
-              <EmptyState
-                icon={PiggyBank}
-                title="No expenses recorded this month yet."
-                body="Once you log a few, this breaks down where your money is actually going."
-              />
-            ) : (
-              <div className="flex flex-col items-center gap-8 md:flex-row">
-                <div className="h-56 w-56 shrink-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={categoryData}
-                        dataKey="value"
-                        nameKey="name"
-                        innerRadius={58}
-                        outerRadius={90}
-                        paddingAngle={2}
-                        strokeWidth={0}
-                        animationDuration={900}
-                      >
-                        {categoryData.map((_, i) => (
-                          <Cell key={i} fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          background: "var(--card)",
-                          border: "1px solid var(--border)",
-                          borderRadius: 12,
-                          fontSize: 12,
-                          boxShadow: "var(--shadow-lift)",
-                        }}
-                        formatter={(v: number) => formatMoney(v, currency)}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <ul className="w-full space-y-2.5">
-                  {categoryData.map((c, i) => {
-                    const share = m.monthExpenses > 0 ? c.value / m.monthExpenses : 0;
-                    return (
-                      <li key={c.name} className="flex items-center justify-between text-[13px]">
-                        <span className="flex items-center gap-2.5">
-                          <span
-                            className="h-2.5 w-2.5 rounded-full"
-                            style={{ background: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }}
-                          />
-                          {c.name}
-                          <span className="text-muted-foreground">{Math.round(share * 100)}%</span>
-                        </span>
-                        <span className="num font-semibold">{formatMoney(c.value, currency)}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
             )}
           </div>
         </section>
@@ -585,32 +593,33 @@ function Home() {
           </div>
         </section>
 
-        {/* ─── Weekly Reflection ───────────────────────────────── */}
-        <section className="mt-12">
-          <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-surface p-8 shadow-soft md:p-10">
-            <div className="pointer-events-none absolute right-6 top-6 hidden md:block">
-              <ShieldCheck className="h-16 w-16 text-sage/30" />
-            </div>
-            <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              Weekly Reflection
-            </div>
-            <h3 className="mt-2 max-w-xl font-display text-2xl font-semibold tracking-tight">
-              A calm mind makes better financial decisions.
-            </h3>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-              Take a few quiet minutes to note what worked, what challenged you, and where you'll
-              focus next week. Learning compounds like wealth.
-            </p>
-            <div className="mt-6">
+        {/* ─── Reflection banner (only when a review is due) ──── */}
+        {reviewDue && !reflectionDismissed && (
+          <section className="mt-8">
+            <div className="flex items-center gap-4 rounded-2xl border border-border/60 bg-surface px-5 py-4 shadow-soft">
+              <ShieldCheck className="h-5 w-5 shrink-0 text-sage" />
+              <p className="min-w-0 flex-1 text-sm text-foreground/80">
+                <span className="font-medium">A weekly review is due.</span>{" "}
+                <span className="text-muted-foreground">
+                  A few quiet minutes now makes next week's decisions easier.
+                </span>
+              </p>
               <Link
                 to="/reviews"
-                className="inline-flex items-center gap-2 rounded-full bg-ocean px-5 py-2.5 text-sm font-medium text-ocean-foreground shadow-soft transition-all hover:shadow-lift"
+                className="shrink-0 rounded-full bg-ocean px-4 py-1.5 text-xs font-medium text-ocean-foreground shadow-soft hover:shadow-lift"
               >
-                Start this week's review <ArrowUpRight className="h-4 w-4" />
+                Start review
               </Link>
+              <button
+                onClick={() => setReflectionDismissed(true)}
+                aria-label="Dismiss"
+                className="shrink-0 rounded-lg p-1.5 text-muted-foreground hover:bg-accent"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
       </AppShell>
     </>
   );
@@ -618,20 +627,6 @@ function Home() {
 
 // ─────────────────────────────────────────────────────────────
 // Sub-components
-
-function HeroStat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
-  return (
-    <div>
-      <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-ocean-foreground/50">
-        {label}
-      </div>
-      <div className="mt-1.5 font-display text-2xl font-semibold tracking-tight md:text-[26px]">
-        {value}
-      </div>
-      {sub && <div className="mt-0.5 text-[11px] text-ocean-foreground/60">{sub}</div>}
-    </div>
-  );
-}
 
 function IntelligenceItem({
   insight,
