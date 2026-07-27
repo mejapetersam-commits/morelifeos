@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { SectionHeader } from "@/components/finance-cards";
 import { OnboardingModal } from "@/components/OnboardingModal";
+import { ImportTransactions } from "@/components/ImportTransactions";
 import { useFinance } from "@/lib/finance-store";
 import { computeMetrics, formatMoney } from "@/lib/finance-utils";
 import type {
@@ -117,6 +118,7 @@ function Money() {
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
             <TabsTrigger value="budgets">Budgets</TabsTrigger>
             <TabsTrigger value="recurring">Recurring</TabsTrigger>
+            <TabsTrigger value="import">Import</TabsTrigger>
           </TabsList>
 
           <TabsContent value="accounts" className="mt-6">
@@ -408,6 +410,10 @@ function Money() {
                 </table>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="import" className="mt-6">
+            <ImportTransactions accounts={state.accounts} onImport={addTransaction} />
           </TabsContent>
         </Tabs>
       </AppShell>
