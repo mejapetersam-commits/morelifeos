@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { SectionHeader, SectionTitle, StatCard } from "@/components/finance-cards";
 import { useFinance } from "@/lib/finance-store";
@@ -382,21 +382,23 @@ function AddOpportunityDialog({
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label>Client / project</Label>
-            <Input value={client} onChange={(e) => setClient(e.target.value)} />
+            <Label htmlFor="opp-client">Client / project</Label>
+            <Input id="opp-client" value={client} onChange={(e) => setClient(e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label>Amount</Label>
+              <Label htmlFor="opp-amount">Amount</Label>
               <Input
+                id="opp-amount"
                 inputMode="numeric"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Expected date</Label>
+              <Label htmlFor="opp-date">Expected date</Label>
               <Input
+                id="opp-date"
                 type="date"
                 value={expectedDate}
                 onChange={(e) => setExpectedDate(e.target.value)}
@@ -405,9 +407,9 @@ function AddOpportunityDialog({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label>Status</Label>
+              <Label htmlFor="opp-status">Status</Label>
               <Select value={status} onValueChange={(v) => setStatus(v as OpportunityStatus)}>
-                <SelectTrigger>
+                <SelectTrigger id="opp-status">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -422,8 +424,9 @@ function AddOpportunityDialog({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Probability (%)</Label>
+              <Label htmlFor="opp-probability">Probability (%)</Label>
               <Input
+                id="opp-probability"
                 inputMode="numeric"
                 value={probability}
                 onChange={(e) => setProbability(e.target.value)}
@@ -431,8 +434,13 @@ function AddOpportunityDialog({
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>Notes (optional)</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
+            <Label htmlFor="opp-notes">Notes (optional)</Label>
+            <Textarea
+              id="opp-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+            />
           </div>
           <Button
             onClick={submit}
@@ -543,6 +551,7 @@ function SourceForm({
   const [status, setStatus] = useState<IncomeSourceStatus>(initial?.status || "active");
   const [monthlyTarget, setMonthlyTarget] = useState(String(initial?.monthlyTarget ?? ""));
   const [annualTarget, setAnnualTarget] = useState(String(initial?.annualTarget ?? ""));
+  const uid = useId();
 
   const submit = () => {
     if (!name.trim()) return;
@@ -558,8 +567,9 @@ function SourceForm({
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <Label>Name</Label>
+        <Label htmlFor={`${uid}-name`}>Name</Label>
         <Input
+          id={`${uid}-name`}
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Freelance design"
@@ -567,9 +577,9 @@ function SourceForm({
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>Category</Label>
+          <Label htmlFor={`${uid}-category`}>Category</Label>
           <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger>
+            <SelectTrigger id={`${uid}-category`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -582,9 +592,9 @@ function SourceForm({
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label>Status</Label>
+          <Label htmlFor={`${uid}-status`}>Status</Label>
           <Select value={status} onValueChange={(v) => setStatus(v as IncomeSourceStatus)}>
-            <SelectTrigger>
+            <SelectTrigger id={`${uid}-status`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -597,16 +607,18 @@ function SourceForm({
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>Monthly target (optional)</Label>
+          <Label htmlFor={`${uid}-monthly`}>Monthly target (optional)</Label>
           <Input
+            id={`${uid}-monthly`}
             inputMode="numeric"
             value={monthlyTarget}
             onChange={(e) => setMonthlyTarget(e.target.value)}
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Annual target (optional)</Label>
+          <Label htmlFor={`${uid}-annual`}>Annual target (optional)</Label>
           <Input
+            id={`${uid}-annual`}
             inputMode="numeric"
             value={annualTarget}
             onChange={(e) => setAnnualTarget(e.target.value)}
