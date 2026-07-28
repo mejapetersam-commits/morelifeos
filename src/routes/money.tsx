@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { SectionHeader } from "@/components/finance-cards";
 import { OnboardingModal } from "@/components/OnboardingModal";
@@ -83,6 +83,8 @@ function Money() {
   const [filterAccount, setFilterAccount] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 25;
 
   const filteredTx = useMemo(() => {
     return state.transactions.filter((t) => {
@@ -99,6 +101,16 @@ function Money() {
       return true;
     });
   }, [state.transactions, state.accounts, search, filterCategory, filterAccount, dateFrom, dateTo]);
+
+  // Any filter change invalidates the current page — e.g. narrowing a
+  // filter down to 3 results while on page 4 would otherwise show nothing.
+  useEffect(() => {
+    setPage(1);
+  }, [search, filterCategory, filterAccount, dateFrom, dateTo]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredTx.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedTx = filteredTx.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const filtersActive =
     search.trim() || filterCategory !== "all" || filterAccount !== "all" || dateFrom || dateTo;
@@ -256,7 +268,7 @@ function Money() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredTx.map((t) => {
+                    {pagedTx.map((t) => {
                       const acct = state.accounts.find((a) => a.id === t.accountId);
                       const sign = t.type === "income" ? "+" : t.type === "expense" ? "−" : "";
                       const color =
@@ -290,6 +302,36 @@ function Money() {
                     })}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {totalPages > 1 && (
+              <div className="mt-4 flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">
+                  Showing {(currentPage - 1) * PAGE_SIZE + 1}–
+                  {Math.min(currentPage * PAGE_SIZE, filteredTx.length)} of {filteredTx.length}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage <= 1}
+                    onClick={() => setPage(currentPage - 1)}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setPage(currentPage + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
             )}
           </TabsContent>
