@@ -836,3 +836,53 @@ export function computeSafeToSpend(
 
   return { liquidBalance, upcomingBills, goalReserve, safeToSpend, windowDays };
 }
+
+// ─── Weekly review context ─────────────────────────────────────────────
+
+export interface WeekSummary {
+  income: number;
+  expenses: number;
+  net: number;
+  topCategory: string | null;
+  topCategoryAmount: number;
+  txCount: number;
+}
+
+/** What actually happened in the 7 days starting at weekStart — the data context a review should be reflecting on, not a blank page. */
+export function computeWeekSummary(state: FinanceState, weekStart: Date): WeekSummary {
+  const start = new Date(weekStart);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+
+  const txs = state.transactions.filter((t) => {
+    const d = new Date(t.date);
+    return d >= start && d < end;
+  });
+
+  const income = txs.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
+  const expenses = txs.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+
+  const byCategory = new Map<string, number>();
+  for (const t of txs) {
+    if (t.type !== "expense") continue;
+    byCategory.set(t.category, (byCategory.get(t.category) || 0) + t.amount);
+  }
+  let topCategory: string | null = null;
+  let topCategoryAmount = 0;
+  for (const [cat, amt] of byCategory) {
+    if (amt > topCategoryAmount) {
+      topCategory = cat;
+      topCategoryAmount = amt;
+    }
+  }
+
+  return {
+    income,
+    expenses,
+    net: income - expenses,
+    topCategory,
+    topCategoryAmount,
+    txCount: txs.length,
+  };
+}

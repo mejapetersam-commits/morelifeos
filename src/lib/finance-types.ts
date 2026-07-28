@@ -65,6 +65,22 @@ export interface Review {
   createdAt: string;
 }
 
+export type DecisionOutcome = "good" | "mixed" | "bad";
+
+export interface Decision {
+  id: string;
+  reviewId?: string;
+  description: string;
+  amount?: number;
+  expectedOutcome?: string;
+  date: string; // ISO — when the decision was made
+  followUpDate: string; // ISO — when to ask "was this the right call"
+  outcome?: DecisionOutcome;
+  outcomeNote?: string;
+  outcomeRecordedAt?: string;
+  createdAt: string;
+}
+
 export interface Profile {
   currency: string;
   monthlyIncome: number;
@@ -153,4 +169,5 @@ export interface FinanceState {
   opportunities: IncomeOpportunity[];
   incomeSources: IncomeSource[];
   inbox: InboxItem[];
+  decisions: Decision[];
 }
