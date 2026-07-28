@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { SectionHeader } from "@/components/finance-cards";
 import { OnboardingModal } from "@/components/OnboardingModal";
@@ -184,10 +184,11 @@ function Money() {
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search description, category, account…"
                   className="pl-9"
+                  aria-label="Search transactions"
                 />
               </div>
               <Select value={filterCategory} onValueChange={setFilterCategory}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-[150px]" aria-label="Filter by category">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -200,7 +201,7 @@ function Money() {
                 </SelectContent>
               </Select>
               <Select value={filterAccount} onValueChange={setFilterAccount}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-[150px]" aria-label="Filter by account">
                   <SelectValue placeholder="Account" />
                 </SelectTrigger>
                 <SelectContent>
@@ -435,6 +436,7 @@ function Money() {
                             onCheckedChange={(checked) =>
                               updateRecurring(r.id, { active: checked })
                             }
+                            aria-label={`${r.active ? "Deactivate" : "Activate"} ${r.description || r.category}`}
                           />
                         </td>
                         <td className="px-2 py-3">
@@ -505,17 +507,18 @@ function AddAccountDialog({
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label>Name</Label>
+            <Label htmlFor="add-acct-name">Name</Label>
             <Input
+              id="add-acct-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Salary account"
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Type</Label>
+            <Label htmlFor="add-acct-type">Type</Label>
             <Select value={type} onValueChange={(v) => setType(v as AccountType)}>
-              <SelectTrigger>
+              <SelectTrigger id="add-acct-type">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -527,8 +530,9 @@ function AddAccountDialog({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Starting balance</Label>
+            <Label htmlFor="add-acct-balance">Starting balance</Label>
             <Input
+              id="add-acct-balance"
               inputMode="numeric"
               value={balance}
               onChange={(e) => setBalance(e.target.value)}
@@ -557,6 +561,7 @@ function EditAccountDialog({
   const [name, setName] = useState(account.name);
   const [type, setType] = useState<AccountType>(account.type);
   const [balance, setBalance] = useState(String(account.balance));
+  const uid = useId();
 
   const openWithReset = (next: boolean) => {
     if (next) {
@@ -589,13 +594,13 @@ function EditAccountDialog({
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label>Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
+            <Label htmlFor={`${uid}-name`}>Name</Label>
+            <Input id={`${uid}-name`} value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label>Type</Label>
+            <Label htmlFor={`${uid}-type`}>Type</Label>
             <Select value={type} onValueChange={(v) => setType(v as AccountType)}>
-              <SelectTrigger>
+              <SelectTrigger id={`${uid}-type`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -607,8 +612,9 @@ function EditAccountDialog({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Balance</Label>
+            <Label htmlFor={`${uid}-balance`}>Balance</Label>
             <Input
+              id={`${uid}-balance`}
               inputMode="numeric"
               value={balance}
               onChange={(e) => setBalance(e.target.value)}
@@ -692,11 +698,12 @@ function AddTxDialog({
           <DialogTitle>New transaction</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-2" role="group" aria-label="Transaction type">
             {(["income", "expense", "transfer", "investment"] as TxType[]).map((t) => (
               <button
                 key={t}
                 onClick={() => setType(t)}
+                aria-pressed={type === t}
                 className={`rounded-lg border px-2 py-2 text-xs capitalize transition-colors ${
                   type === t
                     ? "border-ocean bg-ocean text-ocean-foreground"
@@ -709,22 +716,28 @@ function AddTxDialog({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label>Amount</Label>
+              <Label htmlFor="tx-amount">Amount</Label>
               <Input
+                id="tx-amount"
                 inputMode="numeric"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Date</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <Label htmlFor="tx-date">Date</Label>
+              <Input
+                id="tx-date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>{type === "transfer" ? "From account" : "Account"}</Label>
+            <Label htmlFor="tx-account">{type === "transfer" ? "From account" : "Account"}</Label>
             <Select value={accountId} onValueChange={setAccountId}>
-              <SelectTrigger>
+              <SelectTrigger id="tx-account">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -738,9 +751,9 @@ function AddTxDialog({
           </div>
           {type === "income" && incomeSources.length > 0 && (
             <div className="space-y-1.5">
-              <Label>Income source (optional)</Label>
+              <Label htmlFor="tx-source">Income source (optional)</Label>
               <Select value={sourceId} onValueChange={setSourceId}>
-                <SelectTrigger>
+                <SelectTrigger id="tx-source">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -756,9 +769,9 @@ function AddTxDialog({
           )}
           {type === "transfer" && (
             <div className="space-y-1.5">
-              <Label>To account</Label>
+              <Label htmlFor="tx-to-account">To account</Label>
               <Select value={toAccountId} onValueChange={setToAccountId}>
-                <SelectTrigger>
+                <SelectTrigger id="tx-to-account">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -775,9 +788,9 @@ function AddTxDialog({
           )}
           {type !== "income" && type !== "transfer" && (
             <div className="space-y-1.5">
-              <Label>Category</Label>
+              <Label htmlFor="tx-category">Category</Label>
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger>
+                <SelectTrigger id="tx-category">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -791,8 +804,12 @@ function AddTxDialog({
             </div>
           )}
           <div className="space-y-1.5">
-            <Label>Note (optional)</Label>
-            <Input value={description} onChange={(e) => setDescription(e.target.value)} />
+            <Label htmlFor="tx-note">Note (optional)</Label>
+            <Input
+              id="tx-note"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
           </div>
           <Button
             onClick={submit}
@@ -848,9 +865,9 @@ function AddBudgetDialog({
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label>Category</Label>
+            <Label htmlFor="budget-category">Category</Label>
             <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger>
+              <SelectTrigger id="budget-category">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -863,8 +880,13 @@ function AddBudgetDialog({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Monthly limit</Label>
-            <Input inputMode="numeric" value={limit} onChange={(e) => setLimit(e.target.value)} />
+            <Label htmlFor="budget-limit">Monthly limit</Label>
+            <Input
+              id="budget-limit"
+              inputMode="numeric"
+              value={limit}
+              onChange={(e) => setLimit(e.target.value)}
+            />
           </div>
           <Button
             onClick={submit}
@@ -951,11 +973,12 @@ function AddRecurringDialog({
           <DialogTitle>New recurring transaction</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2" role="group" aria-label="Transaction type">
             {(["income", "expense", "investment"] as TxType[]).map((t) => (
               <button
                 key={t}
                 onClick={() => setType(t)}
+                aria-pressed={type === t}
                 className={`rounded-lg border px-2 py-2 text-xs capitalize transition-colors ${
                   type === t
                     ? "border-ocean bg-ocean text-ocean-foreground"
@@ -968,20 +991,21 @@ function AddRecurringDialog({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label>Amount</Label>
+              <Label htmlFor="rec-amount">Amount</Label>
               <Input
+                id="rec-amount"
                 inputMode="numeric"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Frequency</Label>
+              <Label htmlFor="rec-frequency">Frequency</Label>
               <Select
                 value={frequency}
                 onValueChange={(v) => setFrequency(v as RecurrenceFrequency)}
               >
-                <SelectTrigger>
+                <SelectTrigger id="rec-frequency">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -992,15 +1016,20 @@ function AddRecurringDialog({
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>
+            <Label htmlFor="rec-anchor">
               {frequency === "monthly" ? "Day of month (1-31)" : "Day of week (0=Sun-6=Sat)"}
             </Label>
-            <Input inputMode="numeric" value={anchor} onChange={(e) => setAnchor(e.target.value)} />
+            <Input
+              id="rec-anchor"
+              inputMode="numeric"
+              value={anchor}
+              onChange={(e) => setAnchor(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
-            <Label>Account</Label>
+            <Label htmlFor="rec-account">Account</Label>
             <Select value={accountId} onValueChange={setAccountId}>
-              <SelectTrigger>
+              <SelectTrigger id="rec-account">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -1014,9 +1043,9 @@ function AddRecurringDialog({
           </div>
           {type !== "income" && (
             <div className="space-y-1.5">
-              <Label>Category</Label>
+              <Label htmlFor="rec-category">Category</Label>
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger>
+                <SelectTrigger id="rec-category">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1030,8 +1059,12 @@ function AddRecurringDialog({
             </div>
           )}
           <div className="space-y-1.5">
-            <Label>Label (e.g. "Rent", "Salary")</Label>
-            <Input value={description} onChange={(e) => setDescription(e.target.value)} />
+            <Label htmlFor="rec-label">Label (e.g. "Rent", "Salary")</Label>
+            <Input
+              id="rec-label"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
           </div>
           <Button
             onClick={submit}

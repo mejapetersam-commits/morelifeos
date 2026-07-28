@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { SectionHeader, SectionTitle, StatCard } from "@/components/finance-cards";
 import { useFinance } from "@/lib/finance-store";
@@ -304,6 +304,7 @@ function InvestmentForm({
   );
   const [risk, setRisk] = useState<RiskLevel>(initial?.riskLevel || "medium");
   const [maturityDate, setMaturityDate] = useState(initial?.maturityDate?.slice(0, 10) || "");
+  const uid = useId();
 
   const submit = () => {
     if (!name.trim() || !balance) return;
@@ -324,16 +325,18 @@ function InvestmentForm({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>Account name</Label>
+          <Label htmlFor={`${uid}-name`}>Account name</Label>
           <Input
+            id={`${uid}-name`}
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Mwalimu SACCO"
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Institution (optional)</Label>
+          <Label htmlFor={`${uid}-institution`}>Institution (optional)</Label>
           <Input
+            id={`${uid}-institution`}
             value={institution}
             onChange={(e) => setInstitution(e.target.value)}
             placeholder="e.g. Mwalimu National"
@@ -342,12 +345,12 @@ function InvestmentForm({
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>Type</Label>
+          <Label htmlFor={`${uid}-type`}>Type</Label>
           <Select
             value={institutionType}
             onValueChange={(v) => setInstitutionType(v as InstitutionType)}
           >
-            <SelectTrigger>
+            <SelectTrigger id={`${uid}-type`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -360,14 +363,20 @@ function InvestmentForm({
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label>Current balance</Label>
-          <Input inputMode="numeric" value={balance} onChange={(e) => setBalance(e.target.value)} />
+          <Label htmlFor={`${uid}-balance`}>Current balance</Label>
+          <Input
+            id={`${uid}-balance`}
+            inputMode="numeric"
+            value={balance}
+            onChange={(e) => setBalance(e.target.value)}
+          />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>Expected annual return (%)</Label>
+          <Label htmlFor={`${uid}-rate`}>Expected annual return (%)</Label>
           <Input
+            id={`${uid}-rate`}
             inputMode="decimal"
             value={rate}
             onChange={(e) => setRate(e.target.value)}
@@ -375,12 +384,12 @@ function InvestmentForm({
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Compounding</Label>
+          <Label htmlFor={`${uid}-compounding`}>Compounding</Label>
           <Select
             value={compounding}
             onValueChange={(v) => setCompounding(v as CompoundingFrequency)}
           >
-            <SelectTrigger>
+            <SelectTrigger id={`${uid}-compounding`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -393,9 +402,9 @@ function InvestmentForm({
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>Risk level</Label>
+          <Label htmlFor={`${uid}-risk`}>Risk level</Label>
           <Select value={risk} onValueChange={(v) => setRisk(v as RiskLevel)}>
-            <SelectTrigger>
+            <SelectTrigger id={`${uid}-risk`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -406,8 +415,9 @@ function InvestmentForm({
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label>Maturity date (optional)</Label>
+          <Label htmlFor={`${uid}-maturity`}>Maturity date (optional)</Label>
           <Input
+            id={`${uid}-maturity`}
             type="date"
             value={maturityDate}
             onChange={(e) => setMaturityDate(e.target.value)}

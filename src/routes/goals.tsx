@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { SectionHeader } from "@/components/finance-cards";
 import { OnboardingModal } from "@/components/OnboardingModal";
@@ -232,8 +232,9 @@ function AddGoalDialog({
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label>Goal name</Label>
+            <Label htmlFor="add-goal-name">Goal name</Label>
             <Input
+              id="add-goal-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Emergency fund"
@@ -241,21 +242,32 @@ function AddGoalDialog({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label>Target amount</Label>
+              <Label htmlFor="add-goal-target">Target amount</Label>
               <Input
+                id="add-goal-target"
                 inputMode="numeric"
                 value={target}
                 onChange={(e) => setTarget(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Already saved</Label>
-              <Input inputMode="numeric" value={saved} onChange={(e) => setSaved(e.target.value)} />
+              <Label htmlFor="add-goal-saved">Already saved</Label>
+              <Input
+                id="add-goal-saved"
+                inputMode="numeric"
+                value={saved}
+                onChange={(e) => setSaved(e.target.value)}
+              />
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>Target date</Label>
-            <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+            <Label htmlFor="add-goal-deadline">Target date</Label>
+            <Input
+              id="add-goal-deadline"
+              type="date"
+              value={deadline}
+              onChange={(e) => setDeadline(e.target.value)}
+            />
           </div>
           <p className="text-xs text-muted-foreground">
             "Already saved" is a starting point only, not linked to a transaction — use "Add
@@ -284,6 +296,7 @@ function EditGoalDialog({
   const [name, setName] = useState(goal.name);
   const [target, setTarget] = useState(String(goal.target));
   const [deadline, setDeadline] = useState(goal.deadline.slice(0, 10));
+  const uid = useId();
 
   const openWithReset = (next: boolean) => {
     if (next) {
@@ -320,16 +333,26 @@ function EditGoalDialog({
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label>Goal name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
+            <Label htmlFor={`${uid}-name`}>Goal name</Label>
+            <Input id={`${uid}-name`} value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label>Target amount</Label>
-            <Input inputMode="numeric" value={target} onChange={(e) => setTarget(e.target.value)} />
+            <Label htmlFor={`${uid}-target`}>Target amount</Label>
+            <Input
+              id={`${uid}-target`}
+              inputMode="numeric"
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
-            <Label>Target date</Label>
-            <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+            <Label htmlFor={`${uid}-deadline`}>Target date</Label>
+            <Input
+              id={`${uid}-deadline`}
+              type="date"
+              value={deadline}
+              onChange={(e) => setDeadline(e.target.value)}
+            />
           </div>
           <p className="text-xs text-muted-foreground">
             To change the saved amount, use "Add contribution" on the goal card instead — that keeps

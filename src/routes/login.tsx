@@ -73,8 +73,9 @@ function LoginPage() {
         <form onSubmit={submit} className="mt-6 space-y-4">
           {mode === "signup" && (
             <div className="space-y-1.5">
-              <Label>Name</Label>
+              <Label htmlFor="signup-name">Name</Label>
               <Input
+                id="signup-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Optional"
@@ -82,12 +83,19 @@ function LoginPage() {
             </div>
           )}
           <div className="space-y-1.5">
-            <Label>Email</Label>
-            <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Label htmlFor="login-email">Email</Label>
+            <Input
+              id="login-email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
-            <Label>Password</Label>
+            <Label htmlFor="login-password">Password</Label>
             <Input
+              id="login-password"
               type="password"
               required
               minLength={8}

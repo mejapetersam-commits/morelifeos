@@ -134,6 +134,7 @@ export function ImportTransactions({
                 <Checkbox
                   checked={r.include}
                   onCheckedChange={(c) => updateRow(r.tempId, { include: !!c })}
+                  aria-label={`Include: ${r.description}`}
                 />
                 <Input
                   type="date"
