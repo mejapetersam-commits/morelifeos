@@ -11,6 +11,7 @@ import type {
   Budget,
   RecurrenceFrequency,
   RecurringTransaction,
+  Transaction,
   TxType,
 } from "@/lib/finance-types";
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, Plus, Pencil, Search, Repeat } from "lucide-react";
+import { Trash2, Plus, Pencil, Search, Repeat, AlertCircle } from "lucide-react";
 
 export const Route = createFileRoute("/money")({
   head: () => ({
@@ -63,10 +64,12 @@ const categories = [
 function Money() {
   const {
     state,
-    addAccount,
+    addAccountWithOpeningBalance,
+    recordOpeningBalance,
     updateAccount,
     removeAccount,
     addTransaction,
+    updateTransaction,
     removeTransaction,
     addBudget,
     removeBudget,
@@ -136,7 +139,12 @@ function Money() {
           <TabsContent value="accounts" className="mt-6">
             <div className="mb-4 flex justify-end">
               <AddAccountDialog
-                onAdd={(a) => addAccount({ ...a, currency })}
+                onAdd={(a) =>
+                  addAccountWithOpeningBalance(
+                    { name: a.name, type: a.type, currency: a.currency },
+                    a.balance,
+                  )
+                }
                 defaultCurrency={currency}
               />
             </div>
@@ -144,33 +152,47 @@ function Money() {
               <EmptyState text="No accounts yet. Add your first to start tracking." />
             ) : (
               <div className="grid gap-4 md:grid-cols-2">
-                {state.accounts.map((a) => (
-                  <div
-                    key={a.id}
-                    className="group relative rounded-2xl bg-surface-elevated p-6 shadow-soft"
-                  >
-                    <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                      {a.type}
+                {state.accounts.map((a) => {
+                  const hasOpeningTx = state.transactions.some(
+                    (t) => t.accountId === a.id && t.isOpeningBalance,
+                  );
+                  return (
+                    <div
+                      key={a.id}
+                      className="group relative rounded-2xl bg-surface-elevated p-6 shadow-soft"
+                    >
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                        {a.type}
+                      </div>
+                      <div className="mt-1 font-display text-lg font-semibold">{a.name}</div>
+                      <div className="mt-4 font-display text-2xl font-semibold num">
+                        {formatMoney(a.balance, a.currency)}
+                      </div>
+                      <div className="absolute right-4 top-4 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                        <EditAccountDialog
+                          account={a}
+                          onSave={(patch) => updateAccount(a.id, patch)}
+                        />
+                        <button
+                          onClick={() => removeAccount(a.id)}
+                          className="rounded-lg p-2 text-muted-foreground hover:bg-accent"
+                          aria-label="Delete account"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                      {!hasOpeningTx && a.balance !== 0 && (
+                        <button
+                          onClick={() => recordOpeningBalance(a.id)}
+                          className="mt-3 flex items-center gap-1.5 text-xs font-medium text-amber hover:underline"
+                        >
+                          <AlertCircle className="h-3.5 w-3.5" />
+                          This balance isn't backed by a transaction yet — record it
+                        </button>
+                      )}
                     </div>
-                    <div className="mt-1 font-display text-lg font-semibold">{a.name}</div>
-                    <div className="mt-4 font-display text-2xl font-semibold num">
-                      {formatMoney(a.balance, a.currency)}
-                    </div>
-                    <div className="absolute right-4 top-4 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                      <EditAccountDialog
-                        account={a}
-                        onSave={(patch) => updateAccount(a.id, patch)}
-                      />
-                      <button
-                        onClick={() => removeAccount(a.id)}
-                        className="rounded-lg p-2 text-muted-foreground hover:bg-accent"
-                        aria-label="Delete account"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </TabsContent>
@@ -290,13 +312,19 @@ function Money() {
                             {sign} {formatMoney(t.amount, currency).replace("-", "")}
                           </td>
                           <td className="px-2 py-3">
-                            <button
-                              onClick={() => removeTransaction(t.id)}
-                              className="rounded p-2 text-muted-foreground hover:bg-accent"
-                              aria-label="Delete"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
+                            <div className="flex items-center gap-1">
+                              <EditTransactionDialog
+                                transaction={t}
+                                onSave={(patch) => updateTransaction(t.id, patch)}
+                              />
+                              <button
+                                onClick={() => removeTransaction(t.id)}
+                                className="rounded p-2 text-muted-foreground hover:bg-accent"
+                                aria-label="Delete"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -817,6 +845,140 @@ function AddTxDialog({
             className="w-full bg-ocean text-ocean-foreground hover:bg-ocean/90"
           >
             Save transaction
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditTransactionDialog({
+  transaction,
+  onSave,
+}: {
+  transaction: Transaction;
+  onSave: (patch: Partial<Omit<Transaction, "id">>) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [type, setType] = useState<TxType>(transaction.type);
+  const [amount, setAmount] = useState(String(transaction.amount));
+  const [category, setCategory] = useState(String(transaction.category));
+  const [date, setDate] = useState(transaction.date.slice(0, 10));
+  const [description, setDescription] = useState(transaction.description || "");
+  const uid = useId();
+
+  const openWithReset = (next: boolean) => {
+    if (next) {
+      setType(transaction.type);
+      setAmount(String(transaction.amount));
+      setCategory(String(transaction.category));
+      setDate(transaction.date.slice(0, 10));
+      setDescription(transaction.description || "");
+    }
+    setOpen(next);
+  };
+
+  const submit = () => {
+    if (!amount || Number(amount) <= 0) return;
+    onSave({
+      type,
+      amount: Number(amount),
+      category: type === "income" ? "Income" : category,
+      date: new Date(date).toISOString(),
+      description: description.trim() || undefined,
+    });
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={openWithReset}>
+      <DialogTrigger asChild>
+        <button
+          className="rounded p-2 text-muted-foreground hover:bg-accent"
+          aria-label="Edit transaction"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit transaction</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {transaction.type !== "transfer" && (
+            <div className="grid grid-cols-3 gap-2" role="group" aria-label="Transaction type">
+              {(["income", "expense", "investment"] as TxType[]).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setType(t)}
+                  aria-pressed={type === t}
+                  className={`rounded-lg border px-2 py-2 text-xs capitalize transition-colors ${
+                    type === t
+                      ? "border-ocean bg-ocean text-ocean-foreground"
+                      : "border-border hover:border-ocean/40"
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor={`${uid}-amount`}>Amount</Label>
+              <Input
+                id={`${uid}-amount`}
+                inputMode="numeric"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`${uid}-date`}>Date</Label>
+              <Input
+                id={`${uid}-date`}
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </div>
+          </div>
+          {type !== "income" && type !== "transfer" && (
+            <div className="space-y-1.5">
+              <Label htmlFor={`${uid}-category`}>Category</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger id={`${uid}-category`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div className="space-y-1.5">
+            <Label htmlFor={`${uid}-note`}>Note (optional)</Label>
+            <Input
+              id={`${uid}-note`}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          {transaction.type === "transfer" && (
+            <p className="text-xs text-muted-foreground">
+              Transfers keep their type and accounts fixed here — delete and re-add if you need to
+              change which accounts were involved.
+            </p>
+          )}
+          <Button
+            onClick={submit}
+            className="w-full bg-ocean text-ocean-foreground hover:bg-ocean/90"
+          >
+            Save changes
           </Button>
         </div>
       </DialogContent>

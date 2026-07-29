@@ -138,6 +138,22 @@ describe("computeMetrics", () => {
     });
     expect(computeMetrics(state).savingsRate).toBe(0);
   });
+
+  it("excludes opening-balance transactions from monthIncome — they aren't real cash flow", () => {
+    const state = makeState({
+      transactions: [
+        makeTx({
+          type: "income",
+          amount: 200_000,
+          date: daysAgo(1),
+          isOpeningBalance: true,
+        }),
+        makeTx({ type: "income", amount: 5_000, date: daysAgo(1) }),
+      ],
+    });
+    const m = computeMetrics(state);
+    expect(m.monthIncome).toBe(5_000);
+  });
 });
 
 // ─── futureValue ────────────────────────────────────────────────────────
@@ -379,6 +395,16 @@ describe("monthlySeries", () => {
     expect(series[0].income).toBe(1_000);
     expect(series[0].expenses).toBe(400);
     expect(series[0].net).toBe(600);
+  });
+
+  it("excludes opening-balance transactions from the cash flow chart", () => {
+    const thisMonth = new Date().toISOString();
+    const txs: Transaction[] = [
+      makeTx({ type: "income", amount: 100_000, date: thisMonth, isOpeningBalance: true }),
+      makeTx({ type: "income", amount: 1_000, date: thisMonth }),
+    ];
+    const series = monthlySeries(txs, 1);
+    expect(series[0].income).toBe(1_000);
   });
 });
 

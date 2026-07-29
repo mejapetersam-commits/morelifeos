@@ -34,7 +34,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
-import { Plus, Pencil, Trash2, TrendingUp, PiggyBank, ShieldCheck } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  TrendingUp,
+  PiggyBank,
+  ShieldCheck,
+  AlertCircle,
+} from "lucide-react";
 
 export const Route = createFileRoute("/investments")({
   head: () => ({
@@ -76,10 +84,22 @@ const riskBadge: Record<RiskLevel, string> = {
 };
 
 function InvestmentsPage() {
-  const { state, addAccount, updateAccount, removeAccount, postAccountGrowth } = useFinance();
+  const {
+    state,
+    addAccountWithOpeningBalance,
+    recordOpeningBalance,
+    updateAccount,
+    removeAccount,
+    postAccountGrowth,
+  } = useFinance();
   const currency = state.profile.currency;
   const summary = computeInvestmentSummary(state);
   const fiveYear = summary.projected.find((p) => p.years === 5)?.value ?? summary.totalInvested;
+
+  const handleAddInvestment = (a: Omit<Account, "id" | "currency">) => {
+    const { balance, ...rest } = a;
+    addAccountWithOpeningBalance({ ...rest, currency }, balance);
+  };
 
   return (
     <AppShell>
@@ -96,7 +116,7 @@ function InvestmentsPage() {
             brokerage — to start tracking real returns.
           </p>
           <div className="mt-5 flex justify-center">
-            <AddInvestmentDialog onAdd={(a) => addAccount({ ...a, currency })} />
+            <AddInvestmentDialog onAdd={handleAddInvestment} />
           </div>
         </div>
       ) : (
@@ -179,7 +199,7 @@ function InvestmentsPage() {
             <SectionTitle
               eyebrow="Holdings"
               title="Your accounts"
-              action={<AddInvestmentDialog onAdd={(a) => addAccount({ ...a, currency })} />}
+              action={<AddInvestmentDialog onAdd={handleAddInvestment} />}
             />
             <div className="grid gap-4 md:grid-cols-2">
               {summary.accounts.map((a) => {
@@ -189,6 +209,9 @@ function InvestmentsPage() {
                   a.expectedAnnualReturn || 0,
                   5,
                   a.compoundingFrequency,
+                );
+                const hasOpeningTx = state.transactions.some(
+                  (t) => t.accountId === a.id && t.isOpeningBalance,
                 );
                 return (
                   <div key={a.id} className="rounded-2xl bg-surface-elevated p-6 shadow-soft">
@@ -218,6 +241,16 @@ function InvestmentsPage() {
                     <div className="mt-4 font-display text-2xl font-semibold num">
                       {formatMoney(a.balance, a.currency)}
                     </div>
+
+                    {!hasOpeningTx && a.balance !== 0 && (
+                      <button
+                        onClick={() => recordOpeningBalance(a.id)}
+                        className="mt-2 flex items-center gap-1.5 text-xs font-medium text-amber hover:underline"
+                      >
+                        <AlertCircle className="h-3.5 w-3.5" />
+                        This balance isn't backed by a transaction yet — record it
+                      </button>
+                    )}
 
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
                       {a.expectedAnnualReturn ? (
