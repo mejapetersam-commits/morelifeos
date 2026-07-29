@@ -95,6 +95,10 @@ export function computeMetrics(state: FinanceState): FinanceMetrics {
   const prevByCategory: Record<string, number> = {};
 
   for (const t of state.transactions) {
+    // Opening-balance transactions represent money that existed before
+    // tracking started, not real cash flow — including them here would
+    // make account creation look like an income/expense event.
+    if (t.isOpeningBalance) continue;
     if (inMonth(t.date)) {
       if (t.type === "income") monthIncome += t.amount;
       else if (t.type === "expense") {
@@ -266,6 +270,7 @@ export function monthlySeries(txs: Transaction[], months = 6) {
     let inc = 0;
     let exp = 0;
     for (const t of txs) {
+      if (t.isOpeningBalance) continue;
       const td = new Date(t.date);
       if (td.getFullYear() === d.getFullYear() && td.getMonth() === d.getMonth()) {
         if (t.type === "income") inc += t.amount;
@@ -856,6 +861,7 @@ export function computeWeekSummary(state: FinanceState, weekStart: Date): WeekSu
   end.setDate(end.getDate() + 7);
 
   const txs = state.transactions.filter((t) => {
+    if (t.isOpeningBalance) return false;
     const d = new Date(t.date);
     return d >= start && d < end;
   });

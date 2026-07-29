@@ -44,6 +44,13 @@ export interface Transaction {
   description?: string;
   /** For income transactions only — which income source this came from. */
   sourceId?: string;
+  /**
+   * True for the transaction representing an account's starting balance.
+   * Excluded from income/spending analytics (it's not real cash flow —
+   * just money that existed before tracking started) but still shown and
+   * editable in transaction history like anything else.
+   */
+  isOpeningBalance?: boolean;
 }
 
 export interface Goal {

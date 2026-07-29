@@ -56,11 +56,19 @@ interface Ctx {
   state: FinanceState;
   setProfile: (p: Partial<Profile>) => void;
   addAccount: (a: Omit<Account, "id">) => void;
+  /** Creates an account and, if openingBalance is nonzero, posts a real opening-balance transaction for it instead of silently setting a number. */
+  addAccountWithOpeningBalance: (
+    a: Omit<Account, "id" | "balance">,
+    openingBalance: number,
+  ) => void;
+  /** Backfills an opening-balance transaction for an existing account whose balance isn't traceable to any transaction — matches the current balance, doesn't change it. */
+  recordOpeningBalance: (accountId: string) => void;
   updateAccount: (id: string, patch: Partial<Account>) => void;
   removeAccount: (id: string) => void;
   /** Posts accrued interest/growth as a real income transaction and refreshes the account's rate-confirmed date. */
   postAccountGrowth: (accountId: string, amount: number) => void;
   addTransaction: (t: Omit<Transaction, "id">) => void;
+  updateTransaction: (id: string, patch: Partial<Omit<Transaction, "id">>) => void;
   removeTransaction: (id: string) => void;
   addGoal: (g: Omit<Goal, "id" | "createdAt">) => void;
   updateGoal: (id: string, patch: Partial<Goal>) => void;
@@ -278,6 +286,50 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       setProfile: (p) => setState((s) => ({ ...s, profile: { ...s.profile, ...p } })),
       addAccount: (a) =>
         setState((s) => ({ ...s, accounts: [...s.accounts, { ...a, id: uid() }] })),
+      addAccountWithOpeningBalance: (a, openingBalance) =>
+        setState((s) => {
+          const id = uid();
+          const newAccount: Account = { ...a, id, balance: 0 };
+          let accounts = [...s.accounts, newAccount];
+          let transactions = s.transactions;
+          if (openingBalance !== 0) {
+            const tx: Transaction = {
+              id: uid(),
+              type: openingBalance >= 0 ? "income" : "expense",
+              amount: Math.abs(openingBalance),
+              category: "Other",
+              accountId: id,
+              date: new Date().toISOString(),
+              description: "Opening balance",
+              isOpeningBalance: true,
+            };
+            accounts = applyTxToAccounts(accounts, tx);
+            transactions = [tx, ...transactions];
+          }
+          return { ...s, accounts, transactions };
+        }),
+      recordOpeningBalance: (accountId) =>
+        setState((s) => {
+          const acct = s.accounts.find((a) => a.id === accountId);
+          if (!acct || acct.balance === 0) return s;
+          const alreadyHas = s.transactions.some(
+            (t) => t.accountId === accountId && t.isOpeningBalance,
+          );
+          if (alreadyHas) return s;
+          const tx: Transaction = {
+            id: uid(),
+            type: acct.balance >= 0 ? "income" : "expense",
+            amount: Math.abs(acct.balance),
+            category: "Other",
+            accountId,
+            date: new Date().toISOString(),
+            description: "Opening balance (recorded retroactively)",
+            isOpeningBalance: true,
+          };
+          // Backfill only — the balance is already correct, so this
+          // deliberately does NOT go through applyTxToAccounts.
+          return { ...s, transactions: [tx, ...s.transactions] };
+        }),
       updateAccount: (id, patch) =>
         setState((s) => ({
           ...s,
@@ -296,6 +348,20 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
             ...s,
             accounts: applyTxToAccounts(s.accounts, tx),
             transactions: [tx, ...s.transactions],
+          };
+        }),
+      updateTransaction: (id, patch) =>
+        setState((s) => {
+          const old = s.transactions.find((t) => t.id === id);
+          if (!old) return s;
+          const reversed: Transaction = { ...old, amount: -old.amount };
+          const accountsAfterReversal = applyTxToAccounts(s.accounts, reversed);
+          const updated: Transaction = { ...old, ...patch };
+          const accounts = applyTxToAccounts(accountsAfterReversal, updated);
+          return {
+            ...s,
+            accounts,
+            transactions: s.transactions.map((t) => (t.id === id ? updated : t)),
           };
         }),
       postAccountGrowth: (accountId, amount) =>
