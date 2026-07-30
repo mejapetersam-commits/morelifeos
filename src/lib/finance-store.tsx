@@ -188,6 +188,35 @@ function processDueRecurring(state: FinanceState): FinanceState {
   };
 }
 
+/**
+ * Union-by-id merge, local wins on id collision. Used when a cloud pull
+ * resolves after local edits happened during the pull window — without
+ * this, the pull would silently overwrite whatever the user just added
+ * (e.g. a goal created right after login, before the pull finished).
+ */
+export function mergeById<T extends { id: string }>(local: T[], cloud: T[]): T[] {
+  const map = new Map<string, T>();
+  for (const item of cloud) map.set(item.id, item);
+  for (const item of local) map.set(item.id, item);
+  return Array.from(map.values());
+}
+
+export function mergeStates(local: FinanceState, cloud: FinanceState): FinanceState {
+  return {
+    profile: local.profile,
+    accounts: mergeById(local.accounts, cloud.accounts),
+    transactions: mergeById(local.transactions, cloud.transactions),
+    goals: mergeById(local.goals, cloud.goals),
+    reviews: mergeById(local.reviews, cloud.reviews),
+    budgets: mergeById(local.budgets, cloud.budgets),
+    recurring: mergeById(local.recurring, cloud.recurring),
+    opportunities: mergeById(local.opportunities, cloud.opportunities),
+    incomeSources: mergeById(local.incomeSources, cloud.incomeSources),
+    inbox: mergeById(local.inbox, cloud.inbox),
+    decisions: mergeById(local.decisions, cloud.decisions),
+  };
+}
+
 export function FinanceProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<FinanceState>(defaultState);
   const [hydrated, setHydrated] = useState(false);
@@ -196,6 +225,13 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const userId = session?.user?.id;
   const cloudReady = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // Always-current mirror of state, readable synchronously inside async
+  // callbacks without the stale-closure problem a plain effect dependency
+  // would have.
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   useEffect(() => {
     try {
@@ -229,6 +265,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     cloudReady.current = false;
     setSyncStatus("syncing");
+    const snapshotAtPullStart = stateRef.current;
     (async () => {
       try {
         const res = await fetch("/api/finance-data");
@@ -236,12 +273,20 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         const body = (await res.json()) as { data: FinanceState | null };
         if (cancelled) return;
         if (body.data) {
-          setState(processDueRecurring({ ...defaultState, ...body.data }));
+          const cloudData = processDueRecurring({ ...defaultState, ...body.data });
+          setState((current) => {
+            // If nothing changed locally while the pull was in flight, it's
+            // safe to just take the cloud copy. If the user made edits
+            // during that window (e.g. added a goal right after logging
+            // in), merge rather than silently discarding them.
+            if (current === snapshotAtPullStart) return cloudData;
+            return mergeStates(current, cloudData);
+          });
         } else {
           await fetch("/api/finance-data", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(state),
+            body: JSON.stringify(stateRef.current),
           });
         }
         if (!cancelled) {
@@ -256,7 +301,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
     // Only re-run when the logged-in user changes, not on every state edit.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, userId]);
 
   // While logged in and past the initial pull, debounce-save edits to the cloud.
