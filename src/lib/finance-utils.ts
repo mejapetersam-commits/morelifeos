@@ -34,15 +34,30 @@ export function goalEta(g: Goal, monthlyContribution: number) {
   return { months, date: d };
 }
 
-export function healthScore(m: FinanceMetrics, hasGoals: boolean) {
+export function healthScore(m: FinanceMetrics, hasGoals: boolean): number | null {
+  const hasAnyData =
+    m.monthIncome > 0 || m.monthExpenses > 0 || m.availableCash > 0 || hasGoals;
+
+  if (!hasAnyData) return null; // no data yet — let the UI show an empty state, not a score
+
   let s = 40;
+
+  // Rewards
   if (m.savingsRate >= 0.2) s += 25;
   else if (m.savingsRate >= 0.1) s += 15;
   else if (m.savingsRate > 0) s += 8;
+
   if (m.availableCash > m.monthExpenses * 3) s += 20;
   else if (m.availableCash > m.monthExpenses) s += 10;
+
   if (m.monthIncome > m.monthExpenses) s += 10;
   if (hasGoals) s += 5;
+
+  // Penalties
+  if (m.savingsRate < 0) s -= 15;              // spending into savings
+  if (m.monthIncome < m.monthExpenses) s -= 10; // negative cash flow
+  if (m.availableCash <= 0) s -= 15;            // no buffer at all
+
   return Math.max(0, Math.min(100, s));
 }
 
