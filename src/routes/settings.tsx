@@ -6,6 +6,8 @@ import { useFinance } from "@/lib/finance-store";
 import { useTheme, type Theme } from "@/lib/theme";
 import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,7 +52,7 @@ function isValidFinanceState(data: unknown): data is FinanceState {
 }
 
 function SettingsPage() {
-  const { state, replaceState } = useFinance();
+  const { state, replaceState, setProfile } = useFinance();
   const { theme, setTheme } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingImport, setPendingImport] = useState<FinanceState | null>(null);
@@ -101,6 +103,12 @@ function SettingsPage() {
       <div className="space-y-6">
         {/* Account */}
         <AccountSection />
+
+        {/* Financial profile */}
+        <FinancialProfileSection
+          debt={state.profile.debt}
+          onSave={(debt) => setProfile({ debt })}
+        />
 
         {/* Appearance */}
         <section className="rounded-2xl bg-surface-elevated p-6 shadow-soft">
@@ -219,6 +227,41 @@ function AccountSection() {
       <Button variant="outline" className="mt-4" onClick={() => signOut()}>
         Log out
       </Button>
+    </section>
+  );
+}
+
+function FinancialProfileSection({
+  debt,
+  onSave,
+}: {
+  debt: number;
+  onSave: (debt: number) => void;
+}) {
+  const [value, setValue] = useState(String(debt || ""));
+
+  return (
+    <section className="rounded-2xl bg-surface-elevated p-6 shadow-soft">
+      <h2 className="font-display text-base font-semibold">Financial profile</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        A rough outstanding debt figure, subtracted from your Net Worth on the dashboard. There's no
+        dedicated debt tracking yet, so this is a manually-entered number — set it to 0 if it
+        doesn't apply.
+      </p>
+      <div className="mt-4 flex items-end gap-3">
+        <div className="max-w-[200px] flex-1 space-y-1.5">
+          <Label htmlFor="profile-debt">Outstanding debt</Label>
+          <Input
+            id="profile-debt"
+            inputMode="numeric"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+          />
+        </div>
+        <Button variant="outline" onClick={() => onSave(Number(value) || 0)}>
+          Save
+        </Button>
+      </div>
     </section>
   );
 }

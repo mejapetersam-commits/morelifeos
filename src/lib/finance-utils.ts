@@ -85,7 +85,14 @@ export function computeMetrics(state: FinanceState): FinanceMetrics {
     .filter((a) => a.type !== "investment")
     .reduce((s, a) => s + a.balance, 0);
   const invest = accounts.filter((a) => a.type === "investment").reduce((s, a) => s + a.balance, 0);
-  const netWorth = availableCash + invest + state.profile.investments - state.profile.debt;
+  // profile.investments was a rough figure captured once at onboarding,
+  // before the real Investment Accounts feature existed. Counting it here
+  // as well as real investment account balances double-counts — anyone
+  // who onboarded before that feature shipped would see a phantom number
+  // in Net Worth with no account or transaction behind it, and no way to
+  // edit or clear it. Real investment accounts (with a traceable opening
+  // balance) are the source of truth now.
+  const netWorth = availableCash + invest - state.profile.debt;
 
   let monthIncome = 0;
   let monthExpenses = 0;
