@@ -275,11 +275,9 @@ function Home() {
               accent="indigo"
               value={
                 <AnimatedMoney
-                  value={
-                    state.accounts
-                      .filter((a) => a.type === "investment")
-                      .reduce((s, a) => s + a.balance, 0) + state.profile.investments
-                  }
+                  value={state.accounts
+                    .filter((a) => a.type === "investment")
+                    .reduce((s, a) => s + a.balance, 0)}
                   currency={currency}
                 />
               }

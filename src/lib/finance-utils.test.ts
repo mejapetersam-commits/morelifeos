@@ -105,6 +105,28 @@ describe("computeMetrics", () => {
     expect(computeMetrics(state).netWorth).toBe(7_000);
   });
 
+  it("does not count profile.investments toward net worth — real investment accounts are the source of truth, not the legacy onboarding figure", () => {
+    // Regression test: this field used to be added on top of real
+    // investment account balances, producing a phantom Net Worth number
+    // for anyone with no investment accounts at all — untraceable to any
+    // account or transaction, and with no UI to edit or clear it.
+    const state = makeState({
+      accounts: [], // no investment accounts
+      profile: {
+        currency: "KSh",
+        monthlyIncome: 0,
+        fixedExpenses: 0,
+        variableExpenses: 0,
+        savings: 0,
+        investments: 3_000,
+        debt: 0,
+        vision: [],
+        onboarded: true,
+      },
+    });
+    expect(computeMetrics(state).netWorth).toBe(0);
+  });
+
   it("only counts this month's transactions toward monthIncome/monthExpenses", () => {
     const state = makeState({
       transactions: [
