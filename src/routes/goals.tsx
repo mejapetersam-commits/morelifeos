@@ -482,7 +482,7 @@ function GoalAllocations({
               aria-label="Allocation amount"
             />
             <Button
-              className="h-9 shrink-0 bg-royal text-royal-foreground hover:bg-royal/90"
+              className="h-9 shrink-0 bg-royal text-ocean-foreground hover:bg-royal/90"
               onClick={submit}
               disabled={!selected || parsed <= 0 || !check?.ok}
             >
