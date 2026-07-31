@@ -138,7 +138,9 @@ export function pruneAllocations(state: FinanceState): FinanceState {
 
   const next = Array.from(byPair.values());
   const unchanged =
-    next.length === allocations.length && next.every((a, i) => a === allocations[i]);
+    Array.isArray(state.allocations) &&
+    next.length === allocations.length &&
+    next.every((a, i) => a === allocations[i]);
   return unchanged ? state : { ...state, allocations: next };
 }
 
