@@ -45,6 +45,8 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -67,7 +69,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const { state } = useFinance();
+  const { state, setProfile } = useFinance();
   const { data: session } = useSession();
   const firstName = session?.user?.name?.split(" ")[0];
   const m = computeMetrics(state);
@@ -259,7 +261,7 @@ function Home() {
             />
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
             <KpiCard
               label="Savings Rate"
               accent="gold"
@@ -290,6 +292,11 @@ function Home() {
                 />
               }
               meaning="Capital working for your future self."
+            />
+            <DebtCard
+              debt={state.profile.debt}
+              currency={currency}
+              onSave={(debt) => setProfile({ debt })}
             />
           </div>
         </section>
@@ -884,4 +891,84 @@ function heroCopy(
     headline: "Steady and balanced.",
     body: "A calm month is a good moment to plan the next intentional step.",
   };
+}
+
+/**
+ * Outstanding debt lives with the financial metrics rather than in
+ * Settings — it's a number people revisit, not a preference.
+ */
+function DebtCard({
+  debt,
+  currency,
+  onSave,
+}: {
+  debt: number;
+  currency: string;
+  onSave: (debt: number) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(String(debt || ""));
+
+  if (editing) {
+    return (
+      <div className="rounded-3xl bg-surface-elevated p-5 shadow-soft">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground">
+          Outstanding debt
+        </div>
+        <Input
+          className="mt-3"
+          inputMode="numeric"
+          autoFocus
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          aria-label="Outstanding debt"
+        />
+        <div className="mt-3 flex gap-2">
+          <Button
+            size="sm"
+            onClick={() => {
+              onSave(Number(value) || 0);
+              setEditing(false);
+            }}
+          >
+            Save
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setValue(String(debt || ""));
+              setEditing(false);
+            }}
+          >
+            Cancel
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <KpiCard
+      label="Outstanding Debt"
+      accent="amber"
+      value={<AnimatedMoney value={debt} currency={currency} />}
+      meaning={
+        debt > 0
+          ? "Subtracted from net worth. Tap edit to update the balance."
+          : "Nothing outstanding. Tap edit if that changes."
+      }
+      action={
+        <button
+          onClick={() => {
+            setValue(String(debt || ""));
+            setEditing(true);
+          }}
+          className="text-xs font-medium text-amber hover:underline"
+        >
+          Edit
+        </button>
+      }
+    />
+  );
 }
