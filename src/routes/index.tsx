@@ -93,7 +93,15 @@ function Home() {
 
   const health = healthScore(m, state.goals.length > 0);
   const healthLabel =
-    health >= 80 ? "Excellent" : health >= 60 ? "Healthy" : health >= 40 ? "Building" : "Fragile";
+    health === null
+      ? "Not enough data yet"
+      : health >= 80
+        ? "Excellent"
+        : health >= 60
+          ? "Healthy"
+          : health >= 40
+            ? "Building"
+            : "Fragile";
 
   const now = new Date();
   const hero = heroCopy(state, m);

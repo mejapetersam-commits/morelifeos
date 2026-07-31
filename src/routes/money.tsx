@@ -5,7 +5,7 @@ import { SectionHeader } from "@/components/finance-cards";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { ImportTransactions } from "@/components/ImportTransactions";
 import { useFinance } from "@/lib/finance-store";
-import { computeMetrics, formatMoney } from "@/lib/finance-utils";
+import { computeMetrics, formatMoney, isValidAmount, parseAmount } from "@/lib/finance-utils";
 import type {
   AccountType,
   Budget,
@@ -515,7 +515,12 @@ function AddAccountDialog({
 
   const submit = () => {
     if (!name.trim()) return;
-    onAdd({ name: name.trim(), type, balance: Number(balance) || 0, currency: defaultCurrency });
+    onAdd({
+      name: name.trim(),
+      type,
+      balance: parseAmount(balance) || 0,
+      currency: defaultCurrency,
+    });
     setName("");
     setBalance("");
     setType("bank");
@@ -602,7 +607,7 @@ function EditAccountDialog({
 
   const submit = () => {
     if (!name.trim()) return;
-    onSave({ name: name.trim(), type, balance: Number(balance) || 0 });
+    onSave({ name: name.trim(), type, balance: parseAmount(balance) || 0 });
     setOpen(false);
   };
 
@@ -691,13 +696,13 @@ function AddTxDialog({
   const [description, setDescription] = useState("");
   const [sourceId, setSourceId] = useState<string>("none");
 
-  const disabled = !accountId || !amount || Number(amount) <= 0;
+  const disabled = !accountId || !isValidAmount(amount);
 
   const submit = () => {
     if (disabled) return;
     onAdd({
       type,
-      amount: Number(amount),
+      amount: parseAmount(amount),
       category: type === "income" ? "Income" : category,
       accountId,
       toAccountId: type === "transfer" ? toAccountId : undefined,
@@ -879,10 +884,10 @@ function EditTransactionDialog({
   };
 
   const submit = () => {
-    if (!amount || Number(amount) <= 0) return;
+    if (!isValidAmount(amount)) return;
     onSave({
       type,
-      amount: Number(amount),
+      amount: parseAmount(amount),
       category: type === "income" ? "Income" : category,
       date: new Date(date).toISOString(),
       description: description.trim() || undefined,
@@ -999,8 +1004,8 @@ function AddBudgetDialog({
   const [limit, setLimit] = useState("");
 
   const submit = () => {
-    if (!limit || Number(limit) <= 0) return;
-    onAdd({ category, monthlyLimit: Number(limit) });
+    if (!isValidAmount(limit)) return;
+    onAdd({ category, monthlyLimit: parseAmount(limit) });
     setLimit("");
     setOpen(false);
   };
@@ -1099,14 +1104,14 @@ function AddRecurringDialog({
   const [anchor, setAnchor] = useState("1");
   const [description, setDescription] = useState("");
 
-  const disabled = !accountId || !amount || Number(amount) <= 0;
+  const disabled = !accountId || !isValidAmount(amount);
 
   const submit = () => {
     if (disabled) return;
     const anchorNum = Number(anchor) || 1;
     onAdd({
       type,
-      amount: Number(amount),
+      amount: parseAmount(amount),
       category: type === "income" ? "Income" : category,
       accountId,
       frequency,

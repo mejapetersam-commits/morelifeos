@@ -4,7 +4,7 @@ import { AppShell } from "@/components/AppShell";
 import { SectionHeader, SectionTitle } from "@/components/finance-cards";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { useFinance } from "@/lib/finance-store";
-import { computeWeekSummary, formatMoney } from "@/lib/finance-utils";
+import { computeWeekSummary, formatMoney, isValidAmount, parseAmount } from "@/lib/finance-utils";
 import type { Decision, DecisionOutcome } from "@/lib/finance-types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -293,7 +293,7 @@ function AddDecisionForm({
     if (!description.trim()) return;
     onAdd({
       description: description.trim(),
-      amount: amount ? Number(amount) : undefined,
+      amount: isValidAmount(amount) ? parseAmount(amount) : undefined,
       expectedOutcome: expected.trim() || undefined,
       date: new Date().toISOString(),
     });

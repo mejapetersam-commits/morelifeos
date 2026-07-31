@@ -3,7 +3,13 @@ import { useId, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { SectionHeader, SectionTitle, StatCard } from "@/components/finance-cards";
 import { useFinance } from "@/lib/finance-store";
-import { formatMoney, computePipelineMetrics, computeSourceAnalytics } from "@/lib/finance-utils";
+import {
+  formatMoney,
+  computePipelineMetrics,
+  computeSourceAnalytics,
+  isValidAmount,
+  parseAmount,
+} from "@/lib/finance-utils";
 import type {
   IncomeOpportunity,
   IncomeSource,
@@ -352,10 +358,10 @@ function AddOpportunityDialog({
   const [notes, setNotes] = useState("");
 
   const submit = () => {
-    if (!client.trim() || !amount || Number(amount) <= 0) return;
+    if (!client.trim() || !isValidAmount(amount)) return;
     onAdd({
       client: client.trim(),
-      amount: Number(amount),
+      amount: parseAmount(amount),
       expectedDate: new Date(expectedDate).toISOString(),
       status,
       probability: Math.min(100, Math.max(0, Number(probability) || 0)),
@@ -559,8 +565,8 @@ function SourceForm({
       name: name.trim(),
       category,
       status,
-      monthlyTarget: monthlyTarget ? Number(monthlyTarget) : undefined,
-      annualTarget: annualTarget ? Number(annualTarget) : undefined,
+      monthlyTarget: isValidAmount(monthlyTarget) ? parseAmount(monthlyTarget) : undefined,
+      annualTarget: isValidAmount(annualTarget) ? parseAmount(annualTarget) : undefined,
     });
   };
 

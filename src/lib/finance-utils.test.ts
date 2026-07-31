@@ -9,6 +9,9 @@ import {
   monthlySeries,
   computePipelineMetrics,
   computeInvestmentSummary,
+  formatMoney,
+  parseAmount,
+  isValidAmount,
 } from "./finance-utils";
 import type { FinanceState, Transaction, Account } from "./finance-types";
 
@@ -520,5 +523,100 @@ describe("computeInvestmentSummary", () => {
   it("returns a zero weighted average return when there are no investment accounts", () => {
     const state = makeState({ accounts: [makeAccount({ type: "bank", balance: 5_000 })] });
     expect(computeInvestmentSummary(state).weightedAvgReturn).toBe(0);
+  });
+});
+
+// ─── NaN bug: formatMoney / parseAmount / isValidAmount ─────────────────
+// Regression tests for a real reported bug: typing a comma-formatted
+// amount like "3,000" produced NaN (bare Number("3,000") is NaN), which
+// then got stored and displayed as the literal text "NaN" throughout
+// Income Sources, Budgets, and anywhere else that figure was used.
+
+describe("parseAmount", () => {
+  it("strips thousand-separator commas instead of producing NaN", () => {
+    expect(parseAmount("3,000")).toBe(3000);
+    expect(parseAmount("1,234,567")).toBe(1234567);
+  });
+
+  it("handles a plain number with no commas", () => {
+    expect(parseAmount("500")).toBe(500);
+  });
+
+  it("trims surrounding whitespace", () => {
+    expect(parseAmount("  500  ")).toBe(500);
+  });
+
+  it("still returns NaN for genuinely invalid input", () => {
+    expect(Number.isNaN(parseAmount("abc"))).toBe(true);
+  });
+});
+
+describe("isValidAmount", () => {
+  it("accepts a comma-formatted positive amount", () => {
+    expect(isValidAmount("3,000")).toBe(true);
+  });
+
+  it("rejects non-numeric input instead of silently letting it through", () => {
+    // This was the actual injection point: the old guard pattern
+    // `!amount || Number(amount) <= 0` evaluates to false for NaN (since
+    // `NaN <= 0` is false), so invalid input wasn't actually blocked.
+    expect(isValidAmount("abc")).toBe(false);
+  });
+
+  it("rejects zero and negative amounts", () => {
+    expect(isValidAmount("0")).toBe(false);
+    expect(isValidAmount("-100")).toBe(false);
+  });
+
+  it("rejects empty input", () => {
+    expect(isValidAmount("")).toBe(false);
+  });
+});
+
+describe("formatMoney — NaN defense", () => {
+  it("never renders the literal string 'NaN', even for non-finite input", () => {
+    expect(formatMoney(NaN)).not.toContain("NaN");
+    expect(formatMoney(Infinity)).not.toContain("NaN");
+    expect(formatMoney(NaN, "KSh")).toBe("KSh 0");
+  });
+
+  it("still formats a normal amount correctly", () => {
+    expect(formatMoney(3000, "KSh")).toBe("KSh 3,000");
+  });
+});
+
+describe("computeMetrics — resilience to a single corrupted record", () => {
+  it("doesn't let one NaN transaction amount poison the whole month's total", () => {
+    // Simulates data that was already corrupted by the bug before this
+    // fix — a stray NaN sitting in a transaction shouldn't wipe out the
+    // sum of otherwise-valid transactions in the same category/month.
+    const state = makeState({
+      transactions: [
+        makeTx({ type: "expense", amount: NaN, category: "Food", date: daysAgo(1) }),
+        makeTx({ type: "expense", amount: 500, category: "Food", date: daysAgo(1) }),
+      ],
+    });
+    const m = computeMetrics(state);
+    expect(m.byCategory.Food).toBe(500);
+    expect(Number.isFinite(m.monthExpenses)).toBe(true);
+  });
+
+  it("doesn't let a NaN account balance poison net worth", () => {
+    const state = makeState({
+      accounts: [makeAccount({ balance: NaN }), makeAccount({ id: "a2", balance: 1000 })],
+    });
+    expect(computeMetrics(state).netWorth).toBe(1000);
+  });
+});
+
+describe("computeInvestmentSummary — resilience to a single corrupted record", () => {
+  it("doesn't let a NaN balance poison totalInvested", () => {
+    const state = makeState({
+      accounts: [
+        makeAccount({ id: "i1", type: "investment", balance: NaN, expectedAnnualReturn: 10 }),
+        makeAccount({ id: "i2", type: "investment", balance: 5000, expectedAnnualReturn: 10 }),
+      ],
+    });
+    expect(computeInvestmentSummary(state).totalInvested).toBe(5000);
   });
 });

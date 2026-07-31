@@ -35,8 +35,7 @@ export function goalEta(g: Goal, monthlyContribution: number) {
 }
 
 export function healthScore(m: FinanceMetrics, hasGoals: boolean): number | null {
-  const hasAnyData =
-    m.monthIncome > 0 || m.monthExpenses > 0 || m.availableCash > 0 || hasGoals;
+  const hasAnyData = m.monthIncome > 0 || m.monthExpenses > 0 || m.availableCash > 0 || hasGoals;
 
   if (!hasAnyData) return null; // no data yet — let the UI show an empty state, not a score
 
@@ -54,16 +53,31 @@ export function healthScore(m: FinanceMetrics, hasGoals: boolean): number | null
   if (hasGoals) s += 5;
 
   // Penalties
-  if (m.savingsRate < 0) s -= 15;              // spending into savings
+  if (m.savingsRate < 0) s -= 15; // spending into savings
   if (m.monthIncome < m.monthExpenses) s -= 10; // negative cash flow
-  if (m.availableCash <= 0) s -= 15;            // no buffer at all
+  if (m.availableCash <= 0) s -= 15; // no buffer at all
 
   return Math.max(0, Math.min(100, s));
 }
 
+/** True only for a finite, positive amount — explicitly rejects NaN (unlike `x <= 0`, which is false for NaN and so lets it slip through). */
+export function isValidAmount(raw: string): boolean {
+  const n = parseAmount(raw);
+  return Number.isFinite(n) && n > 0;
+}
+
+/** Coerces a NaN/Infinity value to 0 at the point of summation, so one corrupted record can't turn an entire running total (and everything downstream that touches it) into NaN. */
+function safeNum(n: number): number {
+  return Number.isFinite(n) ? n : 0;
+}
+
 export function formatMoney(amount: number, currency = "KSh") {
-  const sign = amount < 0 ? "-" : "";
-  const abs = Math.abs(amount);
+  // Defends every dollar figure in the app against NaN/Infinity reaching
+  // the screen as the literal text "NaN" — whether from a bad input that
+  // slipped past validation, or corrupted data already saved before a fix.
+  const safe = Number.isFinite(amount) ? amount : 0;
+  const sign = safe < 0 ? "-" : "";
+  const abs = Math.abs(safe);
   return `${sign}${currency} ${abs.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 }
 
@@ -98,8 +112,10 @@ export function computeMetrics(state: FinanceState): FinanceMetrics {
   const accounts = state.accounts;
   const availableCash = accounts
     .filter((a) => a.type !== "investment")
-    .reduce((s, a) => s + a.balance, 0);
-  const invest = accounts.filter((a) => a.type === "investment").reduce((s, a) => s + a.balance, 0);
+    .reduce((s, a) => s + safeNum(a.balance), 0);
+  const invest = accounts
+    .filter((a) => a.type === "investment")
+    .reduce((s, a) => s + safeNum(a.balance), 0);
   // profile.investments was a rough figure captured once at onboarding,
   // before the real Investment Accounts feature existed. Counting it here
   // as well as real investment account balances double-counts — anyone
@@ -121,17 +137,18 @@ export function computeMetrics(state: FinanceState): FinanceMetrics {
     // tracking started, not real cash flow — including them here would
     // make account creation look like an income/expense event.
     if (t.isOpeningBalance) continue;
+    const amount = safeNum(t.amount);
     if (inMonth(t.date)) {
-      if (t.type === "income") monthIncome += t.amount;
+      if (t.type === "income") monthIncome += amount;
       else if (t.type === "expense") {
-        monthExpenses += t.amount;
-        byCategory[t.category] = (byCategory[t.category] || 0) + t.amount;
+        monthExpenses += amount;
+        byCategory[t.category] = (byCategory[t.category] || 0) + amount;
       }
     } else if (inPrevMonth(t.date)) {
-      if (t.type === "income") prevIncome += t.amount;
+      if (t.type === "income") prevIncome += amount;
       else if (t.type === "expense") {
-        prevExpenses += t.amount;
-        prevByCategory[t.category] = (prevByCategory[t.category] || 0) + t.amount;
+        prevExpenses += amount;
+        prevByCategory[t.category] = (prevByCategory[t.category] || 0) + amount;
       }
     }
   }
@@ -377,10 +394,13 @@ export function institutionLabel(t?: InstitutionType) {
 
 export function computeInvestmentSummary(state: FinanceState): InvestmentSummary {
   const accounts = state.accounts.filter((a) => a.type === "investment");
-  const totalInvested = accounts.reduce((s, a) => s + a.balance, 0);
+  const totalInvested = accounts.reduce((s, a) => s + safeNum(a.balance), 0);
   const weightedAvgReturn =
     totalInvested > 0
-      ? accounts.reduce((s, a) => s + a.balance * (a.expectedAnnualReturn || 0), 0) / totalInvested
+      ? accounts.reduce(
+          (s, a) => s + safeNum(a.balance) * safeNum(a.expectedAnnualReturn || 0),
+          0,
+        ) / totalInvested
       : 0;
 
   const horizons = [1, 5, 10];
@@ -388,7 +408,13 @@ export function computeInvestmentSummary(state: FinanceState): InvestmentSummary
     years,
     value: accounts.reduce(
       (s, a) =>
-        s + futureValue(a.balance, a.expectedAnnualReturn || 0, years, a.compoundingFrequency),
+        s +
+        futureValue(
+          safeNum(a.balance),
+          safeNum(a.expectedAnnualReturn || 0),
+          years,
+          a.compoundingFrequency,
+        ),
       0,
     ),
   }));
@@ -396,7 +422,7 @@ export function computeInvestmentSummary(state: FinanceState): InvestmentSummary
   const byType = new Map<string, number>();
   for (const a of accounts) {
     const label = institutionLabel(a.institutionType);
-    byType.set(label, (byType.get(label) || 0) + a.balance);
+    byType.set(label, (byType.get(label) || 0) + safeNum(a.balance));
   }
   const byInstitutionType = Array.from(byType.entries())
     .map(([name, value]) => ({ name, value }))
@@ -447,7 +473,7 @@ function sumInRange(txs: Transaction[], sourceId: string, start: Date, end: Date
         new Date(t.date) >= start &&
         new Date(t.date) < end,
     )
-    .reduce((s, t) => s + t.amount, 0);
+    .reduce((s, t) => s + safeNum(t.amount), 0);
 }
 
 export interface SourceAnalytics {
@@ -590,8 +616,16 @@ function parseMpesaDate(dateStr: string, timeStr?: string): string {
   return new Date(y, (m || 1) - 1, d || 1, hours, minutes).toISOString();
 }
 
-function parseAmount(raw: string): number {
-  return parseFloat(raw.replace(/,/g, ""));
+/**
+ * Parses a comma-formatted amount (from a user-typed field or CSV/M-Pesa
+ * data), stripping thousand-separator commas and whitespace first — bare
+ * `Number("3,000")` / `parseFloat("3,000")` is NaN, which is a completely
+ * natural thing for someone to type given every amount in the app is
+ * displayed comma-formatted. Returns NaN for genuinely invalid input
+ * (callers validating user input should check with isValidAmount first).
+ */
+export function parseAmount(raw: string): number {
+  return parseFloat(raw.replace(/,/g, "").trim());
 }
 
 /**

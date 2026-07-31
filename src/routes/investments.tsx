@@ -9,6 +9,7 @@ import {
   accruedSinceUpdate,
   computeInvestmentSummary,
   institutionLabel,
+  parseAmount,
 } from "@/lib/finance-utils";
 import type {
   Account,
@@ -343,10 +344,10 @@ function InvestmentForm({
     if (!name.trim() || !balance) return;
     onSubmit({
       name: name.trim(),
-      balance: Number(balance) || 0,
+      balance: parseAmount(balance) || 0,
       institution: institution.trim(),
       institutionType,
-      expectedAnnualReturn: Number(rate) || 0,
+      expectedAnnualReturn: parseAmount(rate) || 0,
       compoundingFrequency: compounding,
       riskLevel: risk,
       rateUpdatedAt: new Date().toISOString(),

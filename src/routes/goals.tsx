@@ -4,7 +4,7 @@ import { AppShell } from "@/components/AppShell";
 import { SectionHeader } from "@/components/finance-cards";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { useFinance } from "@/lib/finance-store";
-import { formatMoney } from "@/lib/finance-utils";
+import { formatMoney, isValidAmount, parseAmount } from "@/lib/finance-utils";
 import type { Account, Goal } from "@/lib/finance-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -154,8 +154,8 @@ function AddContribution({
   }
 
   const submit = () => {
-    if (Number(v) > 0 && accountId) {
-      onAdd(accountId, Number(v));
+    if (isValidAmount(v) && accountId) {
+      onAdd(accountId, parseAmount(v));
       setV("");
     }
   };
@@ -206,11 +206,11 @@ function AddGoalDialog({
   );
 
   const submit = () => {
-    if (!name.trim() || !Number(target)) return;
+    if (!name.trim() || !isValidAmount(target)) return;
     onAdd({
       name: name.trim(),
-      target: Number(target),
-      saved: Number(saved) || 0,
+      target: parseAmount(target),
+      saved: parseAmount(saved) || 0,
       deadline: new Date(deadline).toISOString(),
     });
     setOpen(false);
@@ -308,10 +308,10 @@ function EditGoalDialog({
   };
 
   const submit = () => {
-    if (!name.trim() || !Number(target)) return;
+    if (!name.trim() || !isValidAmount(target)) return;
     onSave({
       name: name.trim(),
-      target: Number(target),
+      target: parseAmount(target),
       deadline: new Date(deadline).toISOString(),
     });
     setOpen(false);
