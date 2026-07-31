@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { useFinance } from "@/lib/finance-store";
+import { goalFunding } from "@/lib/allocations";
 import { useSession } from "@/lib/auth-client";
 import {
   computeMetrics,
@@ -115,7 +116,11 @@ function Home() {
   const bills = deriveUpcomingBills(state);
 
   const topGoal = state.goals[0];
-  const eta = topGoal ? goalEta(topGoal, surplusEstimate) : null;
+  const topGoalFunding = topGoal ? goalFunding(topGoal, state.allocations, state.accounts) : null;
+  const eta =
+    topGoal && topGoalFunding
+      ? goalEta({ ...topGoal, saved: topGoalFunding.funded }, surplusEstimate)
+      : null;
 
   // Reflection banner only shows when a review is actually due — no
   // reviews yet, or the most recent one is 7+ days old.
@@ -497,16 +502,24 @@ function Home() {
                 All goals →
               </Link>
             </div>
-            {topGoal ? (
+            {topGoal && topGoalFunding ? (
               <div className="mt-6 flex flex-col items-center text-center">
                 <ProgressRing
-                  progress={topGoal.saved / Math.max(1, topGoal.target)}
+                  progress={topGoalFunding.percent / 100}
                   accent="royal"
                   label={topGoal.name}
                 />
                 <div className="mt-5 font-display text-xl font-semibold">{topGoal.name}</div>
-                <div className="mt-1 text-sm num text-muted-foreground">
-                  {formatMoney(Math.max(0, topGoal.target - topGoal.saved), currency)} remaining
+                <div className="mt-4 grid w-full grid-cols-3 gap-2 text-left">
+                  <GoalFigure label="Target" value={formatMoney(topGoal.target, currency)} />
+                  <GoalFigure
+                    label="Allocated"
+                    value={formatMoney(topGoalFunding.funded, currency)}
+                  />
+                  <GoalFigure
+                    label="Remaining"
+                    value={formatMoney(topGoalFunding.remaining, currency)}
+                  />
                 </div>
                 {eta && eta.date && (
                   <div className="mt-4 rounded-full bg-royal/8 px-3 py-1.5 text-[12px] font-medium text-royal">
@@ -519,8 +532,9 @@ function Home() {
                   </div>
                 )}
                 <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-muted-foreground">
-                  At an estimated {formatMoney(surplusEstimate, currency)} / month, you're on a
-                  steady path.
+                  {topGoalFunding.allocated > 0
+                    ? `${formatMoney(topGoalFunding.allocated, currency)} of your existing balances is assigned to this goal — the money hasn't moved, it's just spoken for.`
+                    : `At an estimated ${formatMoney(surplusEstimate, currency)} / month, you're on a steady path.`}
                 </p>
               </div>
             ) : (
@@ -970,5 +984,14 @@ function DebtCard({
         </button>
       }
     />
+  );
+}
+
+function GoalFigure({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-accent/40 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="num mt-0.5 text-sm font-semibold">{value}</div>
+    </div>
   );
 }
