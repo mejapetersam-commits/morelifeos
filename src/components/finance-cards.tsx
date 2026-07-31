@@ -152,6 +152,7 @@ export function KpiCard({
   spark,
   accent = "ocean",
   meaning,
+  action,
 }: {
   label: string;
   value: ReactNode;
@@ -160,6 +161,7 @@ export function KpiCard({
   spark?: number[];
   accent?: Accent;
   meaning?: string;
+  action?: ReactNode;
 }) {
   return (
     <div className="group relative overflow-hidden rounded-3xl bg-surface-elevated p-6 shadow-soft transition-all duration-500 hover:shadow-lift hover:-translate-y-0.5">
@@ -176,7 +178,10 @@ export function KpiCard({
             {label}
           </span>
         </div>
-        {typeof delta === "number" && <TrendPill delta={delta} invert={invert} />}
+        <div className="flex items-center gap-2">
+          {typeof delta === "number" && <TrendPill delta={delta} invert={invert} />}
+          {action}
+        </div>
       </div>
       <div className="mt-3 font-display text-[28px] font-semibold leading-tight tracking-tight">
         {value}
