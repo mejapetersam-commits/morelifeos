@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Sun, Moon, Laptop, Download, Upload, CheckCircle2 } from "lucide-react";
+import { Sun, Moon, Laptop, Download, Upload, CheckCircle2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { FinanceState } from "@/lib/finance-types";
 
@@ -52,7 +52,7 @@ function isValidFinanceState(data: unknown): data is FinanceState {
 }
 
 function SettingsPage() {
-  const { state, replaceState, setProfile } = useFinance();
+  const { state, replaceState, resetFinancialData } = useFinance();
   const { theme, setTheme } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingImport, setPendingImport] = useState<FinanceState | null>(null);
@@ -103,12 +103,6 @@ function SettingsPage() {
       <div className="space-y-6">
         {/* Account */}
         <AccountSection />
-
-        {/* Financial profile */}
-        <FinancialProfileSection
-          debt={state.profile.debt}
-          onSave={(debt) => setProfile({ debt })}
-        />
 
         {/* Appearance */}
         <section className="rounded-2xl bg-surface-elevated p-6 shadow-soft">
@@ -168,6 +162,9 @@ function SettingsPage() {
             />
           </div>
         </section>
+
+
+        <DangerZone onReset={resetFinancialData} />
       </div>
 
       <AlertDialog open={!!pendingImport} onOpenChange={(open) => !open && setPendingImport(null)}>
@@ -231,36 +228,72 @@ function AccountSection() {
   );
 }
 
-function FinancialProfileSection({
-  debt,
-  onSave,
-}: {
-  debt: number;
-  onSave: (debt: number) => void;
-}) {
-  const [value, setValue] = useState(String(debt || ""));
+/**
+ * Destructive actions, deliberately separated and visually distinct so
+ * they can't be hit by accident while browsing settings.
+ */
+function DangerZone({ onReset }: { onReset: () => void }) {
+  const [confirmText, setConfirmText] = useState("");
 
   return (
-    <section className="rounded-2xl bg-surface-elevated p-6 shadow-soft">
-      <h2 className="font-display text-base font-semibold">Financial profile</h2>
+    <section className="rounded-2xl border border-coral/40 bg-coral/5 p-6">
+      <h2 className="font-display text-base font-semibold text-coral">Danger zone</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        A rough outstanding debt figure, subtracted from your Net Worth on the dashboard. There's no
-        dedicated debt tracking yet, so this is a manually-entered number — set it to 0 if it
-        doesn't apply.
+        Irreversible actions. Download a backup first if there's any chance you'll want this data
+        back.
       </p>
-      <div className="mt-4 flex items-end gap-3">
-        <div className="max-w-[200px] flex-1 space-y-1.5">
-          <Label htmlFor="profile-debt">Outstanding debt</Label>
-          <Input
-            id="profile-debt"
-            inputMode="numeric"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-          />
+
+      <div className="mt-4 flex flex-col gap-3 rounded-xl bg-surface-elevated p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="text-sm font-medium">Reset all data</div>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Permanently deletes every account, transaction, goal, allocation, budget, recurring
+            rule, income record, review and inbox item — on this device and in the cloud. Your login
+            stays intact.
+          </p>
         </div>
-        <Button variant="outline" onClick={() => onSave(Number(value) || 0)}>
-          Save
-        </Button>
+        <AlertDialog onOpenChange={() => setConfirmText("")}>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" className="shrink-0 gap-2">
+              <Trash2 className="h-4 w-4" />
+              Reset all data
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Reset all financial data?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This wipes everything FinanceOS knows about your money and returns the app to a
+                first-time state, including onboarding. It cannot be undone. Your account and login
+                are not affected.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="space-y-1.5">
+              <Label htmlFor="reset-confirm">
+                Type <span className="font-semibold">RESET</span> to confirm
+              </Label>
+              <Input
+                id="reset-confirm"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder="RESET"
+                autoComplete="off"
+              />
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={confirmText.trim().toUpperCase() !== "RESET"}
+                onClick={() => {
+                  onReset();
+                  toast.success("All financial data has been reset");
+                }}
+              >
+                Reset everything
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </section>
   );
