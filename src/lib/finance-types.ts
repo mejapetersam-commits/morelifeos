@@ -165,6 +165,21 @@ export interface InboxItem {
   archivedAt?: string;
 }
 
+/**
+ * Assigns part of an account's balance to a goal WITHOUT moving money.
+ * The account balance is untouched; only its "available to allocate"
+ * shrinks. A goal can be funded by several accounts, and an account can
+ * fund several goals.
+ */
+export interface Allocation {
+  id: string;
+  goalId: string;
+  accountId: string;
+  amount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface FinanceState {
   profile: Profile;
   accounts: Account[];
@@ -177,4 +192,5 @@ export interface FinanceState {
   incomeSources: IncomeSource[];
   inbox: InboxItem[];
   decisions: Decision[];
+  allocations: Allocation[];
 }
