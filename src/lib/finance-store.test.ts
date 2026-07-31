@@ -37,6 +37,7 @@ function makeState(overrides: Partial<FinanceState> = {}): FinanceState {
     incomeSources: [],
     inbox: [],
     decisions: [],
+    allocations: [],
     ...overrides,
   };
 }
