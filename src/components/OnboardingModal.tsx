@@ -81,8 +81,8 @@ export function OnboardingModal() {
           <div>
             <h2 className="font-display text-2xl font-semibold">Welcome to FinanceOS</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Before numbers, purpose. A personal financial system starts with what you're
-              building towards.
+              Before numbers, purpose. A personal financial system starts with what you're building
+              towards.
             </p>
             <div className="mt-6 space-y-2">
               <p className="text-sm font-medium">What financial areas matter most right now?</p>

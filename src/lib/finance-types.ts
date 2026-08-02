@@ -125,7 +125,12 @@ export interface RecurringTransaction {
 }
 
 export type OpportunityStatus =
-  "idea" | "quoted" | "negotiating" | "confirmed" | "paid" | "cancelled";
+  | "idea"
+  | "quoted"
+  | "negotiating"
+  | "confirmed"
+  | "paid"
+  | "cancelled";
 
 export interface IncomeOpportunity {
   id: string;
@@ -152,7 +157,13 @@ export interface IncomeSource {
 }
 
 export type InboxItemType =
-  "expense" | "idea" | "investment" | "reminder" | "goal" | "task" | "note";
+  | "expense"
+  | "idea"
+  | "investment"
+  | "reminder"
+  | "goal"
+  | "task"
+  | "note";
 
 export type InboxItemStatus = "new" | "archived";
 

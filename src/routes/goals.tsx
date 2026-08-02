@@ -5,11 +5,7 @@ import { SectionHeader } from "@/components/finance-cards";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { useFinance } from "@/lib/finance-store";
 import { formatMoney } from "@/lib/finance-utils";
-import {
-  accountAllocationView,
-  goalFunding,
-  validateAllocation,
-} from "@/lib/allocations";
+import { accountAllocationView, goalFunding, validateAllocation } from "@/lib/allocations";
 import type { Account, Allocation, Goal } from "@/lib/finance-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,8 +47,7 @@ function monthsBetween(a: Date, b: Date) {
 }
 
 function Goals() {
-  const { state, addGoal, updateGoal, removeGoal, contributeToGoal, setAllocation } =
-    useFinance();
+  const { state, addGoal, updateGoal, removeGoal, contributeToGoal, setAllocation } = useFinance();
   const currency = state.profile.currency;
 
   return (
@@ -100,7 +95,9 @@ function Goals() {
                   </div>
                   <div className="mt-5">
                     <div className="flex items-baseline justify-between text-sm">
-                      <span className="num font-medium">{formatMoney(funding.funded, currency)}</span>
+                      <span className="num font-medium">
+                        {formatMoney(funding.funded, currency)}
+                      </span>
                       <span className="num text-muted-foreground">
                         of {formatMoney(g.target, currency)}
                       </span>

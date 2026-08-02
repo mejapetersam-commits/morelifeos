@@ -282,7 +282,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         const body = (await res.json()) as { data: FinanceState | null };
         if (cancelled) return;
         if (body.data) {
-          const cloudData = pruneAllocations(processDueRecurring({ ...defaultState, ...body.data }));
+          const cloudData = pruneAllocations(
+            processDueRecurring({ ...defaultState, ...body.data }),
+          );
           setState((current) => {
             // If nothing changed locally while the pull was in flight, it's
             // safe to just take the cloud copy. If the user made edits
