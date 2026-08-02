@@ -69,6 +69,19 @@ function daysAgo(n: number): string {
   return new Date(Date.now() - n * 86_400_000).toISOString();
 }
 
+/**
+ * A recent date guaranteed to fall inside the CURRENT calendar month.
+ * Using plain `daysAgo(1)` for month-scoped assertions makes those tests
+ * fail on the 1st/2nd of every month, when "yesterday" belongs to the
+ * previous month.
+ */
+function thisMonth(daysBack = 0): string {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1, 12, 0, 0);
+  const candidate = new Date(now.getTime() - daysBack * 86_400_000);
+  return (candidate < start ? start : candidate).toISOString();
+}
+
 function daysFromNow(n: number): string {
   return new Date(Date.now() + n * 86_400_000).toISOString();
 }
