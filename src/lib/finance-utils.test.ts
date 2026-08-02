@@ -40,6 +40,7 @@ function makeState(overrides: Partial<FinanceState> = {}): FinanceState {
     incomeSources: [],
     inbox: [],
     decisions: [],
+    allocations: [],
     ...overrides,
   };
 }
@@ -131,10 +132,14 @@ describe("computeMetrics", () => {
   });
 
   it("only counts this month's transactions toward monthIncome/monthExpenses", () => {
+    // Anchored to "today" rather than a fixed offset like daysAgo(2), which
+    // would flakily cross into last month whenever this test happens to
+    // run in the first couple of days of a month.
+    const thisMonth = new Date().toISOString();
     const state = makeState({
       transactions: [
-        makeTx({ type: "income", amount: 50_000, date: daysAgo(2) }),
-        makeTx({ type: "expense", amount: 5_000, category: "Food", date: daysAgo(2) }),
+        makeTx({ type: "income", amount: 50_000, date: thisMonth }),
+        makeTx({ type: "expense", amount: 5_000, category: "Food", date: thisMonth }),
         // A transaction from ~60 days ago should not count toward this month.
         makeTx({ type: "expense", amount: 99_999, category: "Food", date: daysAgo(60) }),
       ],
@@ -147,9 +152,19 @@ describe("computeMetrics", () => {
   it("aggregates expenses by category for the current month only", () => {
     const state = makeState({
       transactions: [
-        makeTx({ type: "expense", amount: 1_000, category: "Food", date: daysAgo(1) }),
-        makeTx({ type: "expense", amount: 500, category: "Food", date: daysAgo(1) }),
-        makeTx({ type: "expense", amount: 2_000, category: "Transport", date: daysAgo(1) }),
+        makeTx({
+          type: "expense",
+          amount: 1_000,
+          category: "Food",
+          date: new Date().toISOString(),
+        }),
+        makeTx({ type: "expense", amount: 500, category: "Food", date: new Date().toISOString() }),
+        makeTx({
+          type: "expense",
+          amount: 2_000,
+          category: "Transport",
+          date: new Date().toISOString(),
+        }),
       ],
     });
     const m = computeMetrics(state);
@@ -159,7 +174,7 @@ describe("computeMetrics", () => {
 
   it("computes a zero savings rate when there is no income, instead of dividing by zero", () => {
     const state = makeState({
-      transactions: [makeTx({ type: "expense", amount: 1_000, date: daysAgo(1) })],
+      transactions: [makeTx({ type: "expense", amount: 1_000, date: new Date().toISOString() })],
     });
     expect(computeMetrics(state).savingsRate).toBe(0);
   });
@@ -170,10 +185,10 @@ describe("computeMetrics", () => {
         makeTx({
           type: "income",
           amount: 200_000,
-          date: daysAgo(1),
+          date: new Date().toISOString(),
           isOpeningBalance: true,
         }),
-        makeTx({ type: "income", amount: 5_000, date: daysAgo(1) }),
+        makeTx({ type: "income", amount: 5_000, date: new Date().toISOString() }),
       ],
     });
     const m = computeMetrics(state);
@@ -592,8 +607,8 @@ describe("computeMetrics — resilience to a single corrupted record", () => {
     // sum of otherwise-valid transactions in the same category/month.
     const state = makeState({
       transactions: [
-        makeTx({ type: "expense", amount: NaN, category: "Food", date: daysAgo(1) }),
-        makeTx({ type: "expense", amount: 500, category: "Food", date: daysAgo(1) }),
+        makeTx({ type: "expense", amount: NaN, category: "Food", date: new Date().toISOString() }),
+        makeTx({ type: "expense", amount: 500, category: "Food", date: new Date().toISOString() }),
       ],
     });
     const m = computeMetrics(state);

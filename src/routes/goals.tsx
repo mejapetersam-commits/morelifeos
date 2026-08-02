@@ -5,7 +5,8 @@ import { SectionHeader } from "@/components/finance-cards";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { useFinance } from "@/lib/finance-store";
 import { formatMoney, isValidAmount, parseAmount } from "@/lib/finance-utils";
-import type { Account, Goal } from "@/lib/finance-types";
+import { accountAllocationView, goalFunding, validateAllocation } from "@/lib/allocations";
+import type { Account, Allocation, Goal } from "@/lib/finance-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, AlertTriangle, X } from "lucide-react";
 
 export const Route = createFileRoute("/goals")({
   head: () => ({
@@ -46,7 +47,7 @@ function monthsBetween(a: Date, b: Date) {
 }
 
 function Goals() {
-  const { state, addGoal, updateGoal, removeGoal, contributeToGoal } = useFinance();
+  const { state, addGoal, updateGoal, removeGoal, contributeToGoal, setAllocation } = useFinance();
   const currency = state.profile.currency;
 
   return (
@@ -69,9 +70,9 @@ function Goals() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {state.goals.map((g) => {
-              const pct = Math.min(100, Math.round((g.saved / g.target) * 100));
+              const funding = goalFunding(g, state.allocations, state.accounts);
               const months = monthsBetween(new Date(), new Date(g.deadline));
-              const monthly = Math.max(0, (g.target - g.saved) / months);
+              const monthly = Math.max(0, funding.remaining / months);
               return (
                 <div key={g.id} className="rounded-2xl bg-surface-elevated p-6 shadow-soft">
                   <div className="flex items-start justify-between">
@@ -94,30 +95,33 @@ function Goals() {
                   </div>
                   <div className="mt-5">
                     <div className="flex items-baseline justify-between text-sm">
-                      <span className="num font-medium">{formatMoney(g.saved, currency)}</span>
+                      <span className="num font-medium">
+                        {formatMoney(funding.funded, currency)}
+                      </span>
                       <span className="num text-muted-foreground">
                         of {formatMoney(g.target, currency)}
                       </span>
                     </div>
-                    <Progress value={pct} className="mt-2 h-2" />
-                    <div className="mt-1 text-xs text-muted-foreground num">{pct}% complete</div>
-                  </div>
-                  <div className="mt-5 grid grid-cols-2 gap-3">
-                    <div className="rounded-xl bg-accent/40 p-3">
-                      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                        Monthly effort
-                      </div>
-                      <div className="mt-1 font-display text-base font-semibold num">
-                        {formatMoney(monthly, currency)}
-                      </div>
-                    </div>
-                    <div className="rounded-xl bg-accent/40 p-3">
-                      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                        Months left
-                      </div>
-                      <div className="mt-1 font-display text-base font-semibold num">{months}</div>
+                    <Progress value={funding.percent} className="mt-2 h-2" />
+                    <div className="mt-1 text-xs text-muted-foreground num">
+                      {funding.percent}% complete · {formatMoney(funding.remaining, currency)}{" "}
+                      remaining
                     </div>
                   </div>
+                  <div className="mt-5 grid grid-cols-3 gap-3">
+                    <MiniStat label="Allocated" value={formatMoney(funding.allocated, currency)} />
+                    <MiniStat label="Monthly effort" value={formatMoney(monthly, currency)} />
+                    <MiniStat label="Months left" value={String(months)} />
+                  </div>
+
+                  <GoalAllocations
+                    goal={g}
+                    accounts={state.accounts}
+                    allocations={state.allocations}
+                    currency={currency}
+                    onSet={(accountId, amount) => setAllocation(g.id, accountId, amount)}
+                  />
+
                   <AddContribution
                     accounts={state.accounts}
                     onAdd={(accountId, amount) => contributeToGoal(g.id, accountId, amount)}
@@ -367,5 +371,130 @@ function EditGoalDialog({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-accent/40 p-3">
+      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="mt-1 font-display text-base font-semibold num">{value}</div>
+    </div>
+  );
+}
+
+/**
+ * Allocation panel. Assigning money to a goal never moves it — the
+ * account balance stays put and only its "available to allocate" drops.
+ */
+function GoalAllocations({
+  goal,
+  accounts,
+  allocations,
+  currency,
+  onSet,
+}: {
+  goal: Goal;
+  accounts: Account[];
+  allocations: Allocation[];
+  currency: string;
+  onSet: (accountId: string, amount: number) => void;
+}) {
+  const mine = allocations.filter((a) => a.goalId === goal.id);
+  const [accountId, setAccountId] = useState("");
+  const [amount, setAmount] = useState("");
+
+  const selected = accounts.find((a) => a.id === accountId);
+  const parsed = parseAmount(amount) || 0;
+  const check = selected
+    ? validateAllocation(accounts, allocations, selected.id, goal.id, parsed)
+    : null;
+
+  const submit = () => {
+    if (!selected || !check?.ok || parsed <= 0) return;
+    onSet(selected.id, parsed);
+    setAmount("");
+  };
+
+  return (
+    <div className="mt-5 rounded-xl border border-border/60 p-4">
+      <div className="flex items-center justify-between">
+        <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          Funded by
+        </div>
+        <div className="text-[11px] text-muted-foreground">Money stays in the account</div>
+      </div>
+
+      {mine.length === 0 ? (
+        <p className="mt-2 text-xs text-muted-foreground">
+          No accounts assigned yet. Allocate part of an existing balance below.
+        </p>
+      ) : (
+        <ul className="mt-2 space-y-1.5">
+          {mine.map((al) => {
+            const acct = accounts.find((a) => a.id === al.accountId);
+            return (
+              <li key={al.id} className="flex items-center justify-between text-sm">
+                <span className="truncate">{acct?.name ?? "Unknown account"}</span>
+                <span className="flex items-center gap-2">
+                  <span className="num font-medium">{formatMoney(al.amount, currency)}</span>
+                  <button
+                    onClick={() => onSet(al.accountId, 0)}
+                    className="rounded p-1 text-muted-foreground hover:bg-accent"
+                    aria-label={`Remove allocation from ${acct?.name ?? "account"}`}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {accounts.length > 0 && (
+        <div className="mt-3 space-y-2">
+          <div className="flex gap-2">
+            <Select value={accountId} onValueChange={setAccountId}>
+              <SelectTrigger className="h-9 text-xs" aria-label="Account to allocate from">
+                <SelectValue placeholder="Allocate from…" />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map((a) => {
+                  const view = accountAllocationView(a, allocations);
+                  return (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name} — {formatMoney(view.available, currency)} free
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            <Input
+              className="h-9 max-w-[130px]"
+              placeholder="Amount"
+              inputMode="numeric"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              aria-label="Allocation amount"
+            />
+            <Button
+              className="h-9 shrink-0 bg-royal text-ocean-foreground hover:bg-royal/90"
+              onClick={submit}
+              disabled={!selected || parsed <= 0 || !check?.ok}
+            >
+              Allocate
+            </Button>
+          </div>
+          {selected && parsed > 0 && check && !check.ok && (
+            <p className="flex items-center gap-1.5 text-xs text-coral">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              Over-allocated by {formatMoney(check.overBy, currency)} — {selected.name} has{" "}
+              {formatMoney(Math.max(0, check.max), currency)} available.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { useFinance } from "@/lib/finance-store";
+import { goalFunding } from "@/lib/allocations";
 import { useSession } from "@/lib/auth-client";
 import {
   computeMetrics,
@@ -45,6 +46,8 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -67,7 +70,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const { state } = useFinance();
+  const { state, setProfile } = useFinance();
   const { data: session } = useSession();
   const firstName = session?.user?.name?.split(" ")[0];
   const m = computeMetrics(state);
@@ -113,7 +116,11 @@ function Home() {
   const bills = deriveUpcomingBills(state);
 
   const topGoal = state.goals[0];
-  const eta = topGoal ? goalEta(topGoal, surplusEstimate) : null;
+  const topGoalFunding = topGoal ? goalFunding(topGoal, state.allocations, state.accounts) : null;
+  const eta =
+    topGoal && topGoalFunding
+      ? goalEta({ ...topGoal, saved: topGoalFunding.funded }, surplusEstimate)
+      : null;
 
   // Reflection banner only shows when a review is actually due — no
   // reviews yet, or the most recent one is 7+ days old.
@@ -259,7 +266,7 @@ function Home() {
             />
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
             <KpiCard
               label="Savings Rate"
               accent="gold"
@@ -290,6 +297,11 @@ function Home() {
                 />
               }
               meaning="Capital working for your future self."
+            />
+            <DebtCard
+              debt={state.profile.debt}
+              currency={currency}
+              onSave={(debt) => setProfile({ debt })}
             />
           </div>
         </section>
@@ -490,16 +502,24 @@ function Home() {
                 All goals →
               </Link>
             </div>
-            {topGoal ? (
+            {topGoal && topGoalFunding ? (
               <div className="mt-6 flex flex-col items-center text-center">
                 <ProgressRing
-                  progress={topGoal.saved / Math.max(1, topGoal.target)}
+                  progress={topGoalFunding.percent / 100}
                   accent="royal"
                   label={topGoal.name}
                 />
                 <div className="mt-5 font-display text-xl font-semibold">{topGoal.name}</div>
-                <div className="mt-1 text-sm num text-muted-foreground">
-                  {formatMoney(Math.max(0, topGoal.target - topGoal.saved), currency)} remaining
+                <div className="mt-4 grid w-full grid-cols-3 gap-2 text-left">
+                  <GoalFigure label="Target" value={formatMoney(topGoal.target, currency)} />
+                  <GoalFigure
+                    label="Allocated"
+                    value={formatMoney(topGoalFunding.funded, currency)}
+                  />
+                  <GoalFigure
+                    label="Remaining"
+                    value={formatMoney(topGoalFunding.remaining, currency)}
+                  />
                 </div>
                 {eta && eta.date && (
                   <div className="mt-4 rounded-full bg-royal/8 px-3 py-1.5 text-[12px] font-medium text-royal">
@@ -512,8 +532,9 @@ function Home() {
                   </div>
                 )}
                 <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-muted-foreground">
-                  At an estimated {formatMoney(surplusEstimate, currency)} / month, you're on a
-                  steady path.
+                  {topGoalFunding.allocated > 0
+                    ? `${formatMoney(topGoalFunding.allocated, currency)} of your existing balances is assigned to this goal — the money hasn't moved, it's just spoken for.`
+                    : `At an estimated ${formatMoney(surplusEstimate, currency)} / month, you're on a steady path.`}
                 </p>
               </div>
             ) : (
@@ -884,4 +905,93 @@ function heroCopy(
     headline: "Steady and balanced.",
     body: "A calm month is a good moment to plan the next intentional step.",
   };
+}
+
+/**
+ * Outstanding debt lives with the financial metrics rather than in
+ * Settings — it's a number people revisit, not a preference.
+ */
+function DebtCard({
+  debt,
+  currency,
+  onSave,
+}: {
+  debt: number;
+  currency: string;
+  onSave: (debt: number) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(String(debt || ""));
+
+  if (editing) {
+    return (
+      <div className="rounded-3xl bg-surface-elevated p-5 shadow-soft">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground">
+          Outstanding debt
+        </div>
+        <Input
+          className="mt-3"
+          inputMode="numeric"
+          autoFocus
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          aria-label="Outstanding debt"
+        />
+        <div className="mt-3 flex gap-2">
+          <Button
+            size="sm"
+            onClick={() => {
+              onSave(Number(value) || 0);
+              setEditing(false);
+            }}
+          >
+            Save
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setValue(String(debt || ""));
+              setEditing(false);
+            }}
+          >
+            Cancel
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <KpiCard
+      label="Outstanding Debt"
+      accent="amber"
+      value={<AnimatedMoney value={debt} currency={currency} />}
+      meaning={
+        debt > 0
+          ? "Subtracted from net worth. Tap edit to update the balance."
+          : "Nothing outstanding. Tap edit if that changes."
+      }
+      action={
+        <button
+          onClick={() => {
+            setValue(String(debt || ""));
+            setEditing(true);
+          }}
+          className="text-xs font-medium text-amber hover:underline"
+        >
+          Edit
+        </button>
+      }
+    />
+  );
+}
+
+function GoalFigure({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-accent/40 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="num mt-0.5 text-sm font-semibold">{value}</div>
+    </div>
+  );
 }

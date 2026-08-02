@@ -9,6 +9,7 @@ import {
 } from "react";
 import type {
   Account,
+  Allocation,
   Budget,
   Decision,
   DecisionOutcome,
@@ -22,6 +23,7 @@ import type {
   Review,
   Transaction,
 } from "./finance-types";
+import { pruneAllocations, validateAllocation } from "./allocations";
 import { useSession } from "./auth-client";
 
 const STORAGE_KEY = "financeos:v1";
@@ -50,6 +52,7 @@ const defaultState: FinanceState = {
   incomeSources: [],
   inbox: [],
   decisions: [],
+  allocations: [],
 };
 
 interface Ctx {
@@ -97,6 +100,11 @@ interface Ctx {
   addDecision: (d: Omit<Decision, "id" | "createdAt">) => void;
   recordDecisionOutcome: (id: string, outcome: DecisionOutcome, note?: string) => void;
   removeDecision: (id: string) => void;
+  /** Assigns (does NOT move) money from an account to a goal. amount <= 0 removes the allocation. Rejects over-allocation. */
+  setAllocation: (goalId: string, accountId: string, amount: number) => void;
+  removeAllocation: (id: string) => void;
+  /** Wipes all financial data and returns the app to a first-run state. Auth is untouched. */
+  resetFinancialData: () => void;
   reset: () => void;
   replaceState: (next: FinanceState) => void;
   /** "local" until logged in; reflects cloud sync progress once a session exists. */
@@ -214,6 +222,7 @@ export function mergeStates(local: FinanceState, cloud: FinanceState): FinanceSt
     incomeSources: mergeById(local.incomeSources, cloud.incomeSources),
     inbox: mergeById(local.inbox, cloud.inbox),
     decisions: mergeById(local.decisions, cloud.decisions),
+    allocations: mergeById(local.allocations ?? [], cloud.allocations ?? []),
   };
 }
 
@@ -237,7 +246,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       const loaded = raw ? { ...defaultState, ...JSON.parse(raw) } : defaultState;
-      setState(processDueRecurring(loaded));
+      setState(pruneAllocations(processDueRecurring(loaded)));
     } catch {
       // Corrupt or missing localStorage data — fall back to defaults.
     }
@@ -273,7 +282,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         const body = (await res.json()) as { data: FinanceState | null };
         if (cancelled) return;
         if (body.data) {
-          const cloudData = processDueRecurring({ ...defaultState, ...body.data });
+          const cloudData = pruneAllocations(processDueRecurring({ ...defaultState, ...body.data }));
           setState((current) => {
             // If nothing changed locally while the pull was in flight, it's
             // safe to just take the cloud copy. If the user made edits
@@ -384,6 +393,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           ...s,
           accounts: s.accounts.filter((a) => a.id !== id),
           transactions: s.transactions.filter((t) => t.accountId !== id && t.toAccountId !== id),
+          // Dependent records must never outlive their account.
+          allocations: s.allocations.filter((al) => al.accountId !== id),
         })),
       addTransaction: (t) =>
         setState((s) => {
@@ -449,7 +460,45 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           ...s,
           goals: s.goals.map((g) => (g.id === id ? { ...g, ...patch } : g)),
         })),
-      removeGoal: (id) => setState((s) => ({ ...s, goals: s.goals.filter((g) => g.id !== id) })),
+      removeGoal: (id) =>
+        setState((s) => ({
+          ...s,
+          goals: s.goals.filter((g) => g.id !== id),
+          allocations: s.allocations.filter((al) => al.goalId !== id),
+        })),
+      setAllocation: (goalId, accountId, amount) =>
+        setState((s) => {
+          const existing = s.allocations.find(
+            (a) => a.goalId === goalId && a.accountId === accountId,
+          );
+          if (!(amount > 0)) {
+            return existing
+              ? { ...s, allocations: s.allocations.filter((a) => a.id !== existing.id) }
+              : s;
+          }
+          const check = validateAllocation(s.accounts, s.allocations, accountId, goalId, amount);
+          if (!check.ok) return s;
+          const now = new Date().toISOString();
+          if (existing) {
+            return {
+              ...s,
+              allocations: s.allocations.map((a) =>
+                a.id === existing.id ? { ...a, amount, updatedAt: now } : a,
+              ),
+            };
+          }
+          const allocation: Allocation = {
+            id: uid(),
+            goalId,
+            accountId,
+            amount,
+            createdAt: now,
+            updatedAt: now,
+          };
+          return { ...s, allocations: [...s.allocations, allocation] };
+        }),
+      removeAllocation: (id) =>
+        setState((s) => ({ ...s, allocations: s.allocations.filter((a) => a.id !== id) })),
       contributeToGoal: (goalId, accountId, amount) =>
         setState((s) => {
           if (amount <= 0) return s;
@@ -589,8 +638,15 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         })),
       removeDecision: (id) =>
         setState((s) => ({ ...s, decisions: s.decisions.filter((d) => d.id !== id) })),
+      resetFinancialData: () =>
+        setState((s) => ({
+          ...defaultState,
+          // Keep the display currency so a reset app isn't suddenly foreign.
+          profile: { ...defaultProfile, currency: s.profile.currency },
+        })),
       reset: () => setState(defaultState),
-      replaceState: (next) => setState(processDueRecurring({ ...defaultState, ...next })),
+      replaceState: (next) =>
+        setState(pruneAllocations(processDueRecurring({ ...defaultState, ...next }))),
       syncStatus,
     }),
     [state, syncStatus],

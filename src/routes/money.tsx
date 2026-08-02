@@ -5,6 +5,7 @@ import { SectionHeader } from "@/components/finance-cards";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { ImportTransactions } from "@/components/ImportTransactions";
 import { useFinance } from "@/lib/finance-store";
+import { accountAllocationView } from "@/lib/allocations";
 import { computeMetrics, formatMoney, isValidAmount, parseAmount } from "@/lib/finance-utils";
 import type {
   AccountType,
@@ -156,6 +157,7 @@ function Money() {
                   const hasOpeningTx = state.transactions.some(
                     (t) => t.accountId === a.id && t.isOpeningBalance,
                   );
+                  const view = accountAllocationView(a, state.allocations);
                   return (
                     <div
                       key={a.id}
@@ -168,6 +170,36 @@ function Money() {
                       <div className="mt-4 font-display text-2xl font-semibold num">
                         {formatMoney(a.balance, a.currency)}
                       </div>
+                      <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <div className="uppercase tracking-wider text-muted-foreground">
+                            Allocated
+                          </div>
+                          <div className="num mt-0.5 font-medium text-royal">
+                            {formatMoney(view.allocated, a.currency)}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="uppercase tracking-wider text-muted-foreground">
+                            Available to allocate
+                          </div>
+                          <div
+                            className={
+                              view.available < 0
+                                ? "num mt-0.5 font-medium text-coral"
+                                : "num mt-0.5 font-medium text-sage"
+                            }
+                          >
+                            {formatMoney(view.available, a.currency)}
+                          </div>
+                        </div>
+                      </div>
+                      {view.overAllocatedBy > 0 && (
+                        <p className="mt-2 text-xs text-coral">
+                          Over-allocated by {formatMoney(view.overAllocatedBy, a.currency)} — reduce
+                          a goal allocation to resolve.
+                        </p>
+                      )}
                       <div className="absolute right-4 top-4 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                         <EditAccountDialog
                           account={a}
