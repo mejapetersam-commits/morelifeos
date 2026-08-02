@@ -309,6 +309,44 @@ function Home() {
           </div>
         </section>
 
+        {/* ─── Cash Flow Forecast ──────────────────────────────── */}
+        <section className="mt-12">
+          <SectionTitle
+            eyebrow="Forecast"
+            title="Where your money is heading"
+          />
+          <div className="rounded-3xl bg-surface-elevated p-8 shadow-lift">
+            <div className="grid gap-6 sm:grid-cols-3">
+              {forecast.horizons.map((h) => (
+                <div key={h.days}>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    In {h.days} days
+                  </p>
+                  <p className="mt-1 text-2xl font-semibold num">
+                    {formatMoney(h.balance, currency)}
+                  </p>
+                  <p
+                    className={`mt-1 text-sm ${h.change >= 0 ? "text-sage" : "text-coral"}`}
+                  >
+                    {h.change >= 0 ? "+" : "−"}
+                    {formatMoney(Math.abs(h.change), currency)} vs today
+                  </p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-6 text-sm text-muted-foreground">
+              {forecast.shortfallDate
+                ? `Heads up — on this trajectory your cash runs out around ${new Date(
+                    forecast.shortfallDate,
+                  ).toLocaleDateString(undefined, { day: "numeric", month: "long" })}.`
+                : forecast.lowConfidence
+                  ? "Based on scheduled bills only — add a few weeks of transactions for a sharper projection."
+                  : `Projected from your scheduled bills and your recent spending pattern. Health grade: ${healthLabel}.`}
+            </p>
+          </div>
+        </section>
+
+
         {/* ─── Financial Intelligence ──────────────────────────── */}
         {insights.length > 0 && (
           <section className="mt-12">
