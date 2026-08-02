@@ -114,7 +114,8 @@ export function computeHealthScore(
   // ── Debt-to-income: 0x annual income -> 100, 2x+ -> 0 ────────────────
   const annualIncome = (m.monthIncome || m.prevIncome) * 12;
   if (state.profile.debt > 0 || annualIncome > 0) {
-    const ratio = annualIncome > 0 ? state.profile.debt / annualIncome : state.profile.debt > 0 ? 2 : 0;
+    const ratio =
+      annualIncome > 0 ? state.profile.debt / annualIncome : state.profile.debt > 0 ? 2 : 0;
     factors.push({
       key: "debtRatio",
       label: "Debt load",
@@ -205,9 +206,10 @@ export function computeHealthScore(
   }
 
   const totalWeight = factors.reduce((s, f) => s + f.weight, 0);
-  const score = totalWeight === 0 ? 0 : Math.round(
-    factors.reduce((s, f) => s + f.score * f.weight, 0) / totalWeight,
-  );
+  const score =
+    totalWeight === 0
+      ? 0
+      : Math.round(factors.reduce((s, f) => s + f.score * f.weight, 0) / totalWeight);
 
   const weakest = [...factors]
     .filter((f) => f.score < 60)

@@ -65,7 +65,10 @@ describe("computeHealthScore", () => {
 
   it("scores a strong profile above a weak one", () => {
     const strong = makeState({
-      accounts: [acct({ balance: 600_000 }), acct({ id: "a2", type: "investment", balance: 400_000 })],
+      accounts: [
+        acct({ balance: 600_000 }),
+        acct({ id: "a2", type: "investment", balance: 400_000 }),
+      ],
       transactions: [
         tx({ type: "income", amount: 200_000, accountId: "a1" }),
         tx({ type: "expense", amount: 100_000, accountId: "a1" }),
@@ -175,8 +178,9 @@ describe("expandRecurring", () => {
 
   it("skips inactive rules", () => {
     const from = new Date();
-    expect(expandRecurring(rule({ active: false }), from, new Date(from.getTime() + 60 * 86_400_000)))
-      .toHaveLength(0);
+    expect(
+      expandRecurring(rule({ active: false }), from, new Date(from.getTime() + 60 * 86_400_000)),
+    ).toHaveLength(0);
   });
 
   it("catches up a stale nextDate instead of emitting a year of backdated hits", () => {
@@ -188,14 +192,19 @@ describe("expandRecurring", () => {
       to,
     );
     expect(occ.length).toBeLessThanOrEqual(2);
-    occ.forEach((o) => expect(new Date(o.date).getTime()).toBeGreaterThanOrEqual(from.getTime() - 86_400_000));
+    occ.forEach((o) =>
+      expect(new Date(o.date).getTime()).toBeGreaterThanOrEqual(from.getTime() - 86_400_000),
+    );
   });
 });
 
 describe("forecastCashFlow", () => {
   it("starts from cash accounts only, excluding investments", () => {
     const state = makeState({
-      accounts: [acct({ balance: 100_000 }), acct({ id: "a2", type: "investment", balance: 500_000 })],
+      accounts: [
+        acct({ balance: 100_000 }),
+        acct({ id: "a2", type: "investment", balance: 500_000 }),
+      ],
     });
     expect(forecastCashFlow(state, { days: 30 }).startingBalance).toBe(100_000);
   });

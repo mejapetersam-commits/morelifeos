@@ -311,10 +311,7 @@ function Home() {
 
         {/* ─── Cash Flow Forecast ──────────────────────────────── */}
         <section className="mt-12">
-          <SectionTitle
-            eyebrow="Forecast"
-            title="Where your money is heading"
-          />
+          <SectionTitle eyebrow="Forecast" title="Where your money is heading" />
           <div className="rounded-3xl bg-surface-elevated p-8 shadow-lift">
             <div className="grid gap-6 sm:grid-cols-3">
               {forecast.horizons.map((h) => (
@@ -325,9 +322,7 @@ function Home() {
                   <p className="mt-1 text-2xl font-semibold num">
                     {formatMoney(h.balance, currency)}
                   </p>
-                  <p
-                    className={`mt-1 text-sm ${h.change >= 0 ? "text-sage" : "text-coral"}`}
-                  >
+                  <p className={`mt-1 text-sm ${h.change >= 0 ? "text-sage" : "text-coral"}`}>
                     {h.change >= 0 ? "+" : "−"}
                     {formatMoney(Math.abs(h.change), currency)} vs today
                   </p>
@@ -345,7 +340,6 @@ function Home() {
             </p>
           </div>
         </section>
-
 
         {/* ─── Financial Intelligence ──────────────────────────── */}
         {insights.length > 0 && (
