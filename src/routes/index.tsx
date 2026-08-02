@@ -13,10 +13,11 @@ import {
   generateInsights,
   goalEta,
   greeting,
-  healthScore,
   monthlySeries,
   pct,
 } from "@/lib/finance-utils";
+import { computeHealthScore } from "@/lib/health-score";
+import { forecastCashFlow } from "@/lib/forecast";
 import { AnimatedMoney, KpiCard, ProgressRing, SectionTitle } from "@/components/finance-cards";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -94,17 +95,19 @@ function Home() {
   const deltaSavings =
     m.prevIncome > 0 ? m.savingsRate - (m.prevIncome - m.prevExpenses) / m.prevIncome : 0;
 
-  const health = healthScore(m, state.goals.length > 0);
-  const healthLabel =
-    health === null
-      ? "Not enough data yet"
-      : health >= 80
-        ? "Excellent"
-        : health >= 60
-          ? "Healthy"
-          : health >= 40
-            ? "Building"
-            : "Fragile";
+  // Multi-factor, explainable score (src/lib/health-score.ts). Every point is
+  // traceable to a named factor, so the card can say WHY the number moved.
+  const healthResult = computeHealthScore(state, m);
+  const health = healthResult?.score ?? null;
+  const healthLabel = healthResult?.grade ?? "Not enough data yet";
+  const healthMeaning = healthResult
+    ? healthResult.weakest[0]
+      ? `${healthResult.grade} — biggest drag: ${healthResult.weakest[0].label.toLowerCase()}. ${healthResult.weakest[0].detail}`
+      : `${healthResult.grade} — savings, runway, debt and cash flow are all in good shape.`
+    : "Add income, spending or accounts to unlock your score.";
+
+  // 90-day cash-flow projection from scheduled bills plus recent drift.
+  const forecast = forecastCashFlow(state, { days: 90 });
 
   const now = new Date();
   const hero = heroCopy(state, m);
@@ -283,7 +286,7 @@ function Home() {
                   <span className="ml-1 text-base font-normal text-muted-foreground">/ 100</span>
                 </span>
               }
-              meaning={`${healthLabel} — a composite of runway, cash flow and savings discipline.`}
+              meaning={healthMeaning}
             />
             <KpiCard
               label="Investments"
