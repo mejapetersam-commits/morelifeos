@@ -13,10 +13,11 @@ import {
   generateInsights,
   goalEta,
   greeting,
-  healthScore,
   monthlySeries,
   pct,
 } from "@/lib/finance-utils";
+import { computeHealthScore } from "@/lib/health-score";
+import { forecastCashFlow } from "@/lib/forecast";
 import { AnimatedMoney, KpiCard, ProgressRing, SectionTitle } from "@/components/finance-cards";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -94,17 +95,19 @@ function Home() {
   const deltaSavings =
     m.prevIncome > 0 ? m.savingsRate - (m.prevIncome - m.prevExpenses) / m.prevIncome : 0;
 
-  const health = healthScore(m, state.goals.length > 0);
-  const healthLabel =
-    health === null
-      ? "Not enough data yet"
-      : health >= 80
-        ? "Excellent"
-        : health >= 60
-          ? "Healthy"
-          : health >= 40
-            ? "Building"
-            : "Fragile";
+  // Multi-factor, explainable score (src/lib/health-score.ts). Every point is
+  // traceable to a named factor, so the card can say WHY the number moved.
+  const healthResult = computeHealthScore(state, m);
+  const health = healthResult?.score ?? null;
+  const healthLabel = healthResult?.grade ?? "Not enough data yet";
+  const healthMeaning = healthResult
+    ? healthResult.weakest[0]
+      ? `${healthResult.grade} — biggest drag: ${healthResult.weakest[0].label.toLowerCase()}. ${healthResult.weakest[0].detail}`
+      : `${healthResult.grade} — savings, runway, debt and cash flow are all in good shape.`
+    : "Add income, spending or accounts to unlock your score.";
+
+  // 90-day cash-flow projection from scheduled bills plus recent drift.
+  const forecast = forecastCashFlow(state, { days: 90 });
 
   const now = new Date();
   const hero = heroCopy(state, m);
@@ -283,7 +286,7 @@ function Home() {
                   <span className="ml-1 text-base font-normal text-muted-foreground">/ 100</span>
                 </span>
               }
-              meaning={`${healthLabel} — a composite of runway, cash flow and savings discipline.`}
+              meaning={healthMeaning}
             />
             <KpiCard
               label="Investments"
@@ -303,6 +306,38 @@ function Home() {
               currency={currency}
               onSave={(debt) => setProfile({ debt })}
             />
+          </div>
+        </section>
+
+        {/* ─── Cash Flow Forecast ──────────────────────────────── */}
+        <section className="mt-12">
+          <SectionTitle eyebrow="Forecast" title="Where your money is heading" />
+          <div className="rounded-3xl bg-surface-elevated p-8 shadow-lift">
+            <div className="grid gap-6 sm:grid-cols-3">
+              {forecast.horizons.map((h) => (
+                <div key={h.days}>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    In {h.days} days
+                  </p>
+                  <p className="mt-1 text-2xl font-semibold num">
+                    {formatMoney(h.balance, currency)}
+                  </p>
+                  <p className={`mt-1 text-sm ${h.change >= 0 ? "text-sage" : "text-coral"}`}>
+                    {h.change >= 0 ? "+" : "−"}
+                    {formatMoney(Math.abs(h.change), currency)} vs today
+                  </p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-6 text-sm text-muted-foreground">
+              {forecast.shortfallDate
+                ? `Heads up — on this trajectory your cash runs out around ${new Date(
+                    forecast.shortfallDate,
+                  ).toLocaleDateString(undefined, { day: "numeric", month: "long" })}.`
+                : forecast.lowConfidence
+                  ? "Based on scheduled bills only — add a few weeks of transactions for a sharper projection."
+                  : `Projected from your scheduled bills and your recent spending pattern. Health grade: ${healthLabel}.`}
+            </p>
           </div>
         </section>
 
