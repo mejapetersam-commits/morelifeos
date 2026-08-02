@@ -116,7 +116,11 @@ export function forecastCashFlow(
       return s + (r.type === "income" ? per : -per);
     }, 0);
 
-  const rawDrift = observedDays > 0 ? netHistoric / observedDays : 0;
+  // Averaging over a window shorter than a month makes a single monthly
+  // salary look like a huge daily inflow, so the denominator is floored at
+  // 30 days: short history projects conservatively rather than optimistically.
+  const averagingDays = Math.max(30, observedDays);
+  const rawDrift = observedDays > 0 ? netHistoric / averagingDays : 0;
   const dailyDrift = observedDays > 0 ? rawDrift - recurringDailyRate : 0;
   const lowConfidence = observedDays < 14;
 

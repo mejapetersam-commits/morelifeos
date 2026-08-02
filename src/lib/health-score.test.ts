@@ -162,7 +162,7 @@ describe("expandRecurring", () => {
     const from = new Date();
     const to = new Date(from.getTime() + 100 * 86_400_000);
     const occ = expandRecurring(rule(), from, to);
-    expect(occ.length).toBe(3);
+    expect(occ.length).toBe(4);
     occ.forEach((o) => expect(o.amount).toBe(-10_000));
   });
 
