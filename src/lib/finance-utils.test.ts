@@ -144,8 +144,8 @@ describe("computeMetrics", () => {
   it("only counts this month's transactions toward monthIncome/monthExpenses", () => {
     const state = makeState({
       transactions: [
-        makeTx({ type: "income", amount: 50_000, date: daysAgo(2) }),
-        makeTx({ type: "expense", amount: 5_000, category: "Food", date: daysAgo(2) }),
+        makeTx({ type: "income", amount: 50_000, date: thisMonth(2) }),
+        makeTx({ type: "expense", amount: 5_000, category: "Food", date: thisMonth(2) }),
         // A transaction from ~60 days ago should not count toward this month.
         makeTx({ type: "expense", amount: 99_999, category: "Food", date: daysAgo(60) }),
       ],
@@ -158,9 +158,9 @@ describe("computeMetrics", () => {
   it("aggregates expenses by category for the current month only", () => {
     const state = makeState({
       transactions: [
-        makeTx({ type: "expense", amount: 1_000, category: "Food", date: daysAgo(1) }),
-        makeTx({ type: "expense", amount: 500, category: "Food", date: daysAgo(1) }),
-        makeTx({ type: "expense", amount: 2_000, category: "Transport", date: daysAgo(1) }),
+        makeTx({ type: "expense", amount: 1_000, category: "Food", date: thisMonth(1) }),
+        makeTx({ type: "expense", amount: 500, category: "Food", date: thisMonth(1) }),
+        makeTx({ type: "expense", amount: 2_000, category: "Transport", date: thisMonth(1) }),
       ],
     });
     const m = computeMetrics(state);
@@ -170,7 +170,7 @@ describe("computeMetrics", () => {
 
   it("computes a zero savings rate when there is no income, instead of dividing by zero", () => {
     const state = makeState({
-      transactions: [makeTx({ type: "expense", amount: 1_000, date: daysAgo(1) })],
+      transactions: [makeTx({ type: "expense", amount: 1_000, date: thisMonth(1) })],
     });
     expect(computeMetrics(state).savingsRate).toBe(0);
   });
@@ -181,10 +181,10 @@ describe("computeMetrics", () => {
         makeTx({
           type: "income",
           amount: 200_000,
-          date: daysAgo(1),
+          date: thisMonth(1),
           isOpeningBalance: true,
         }),
-        makeTx({ type: "income", amount: 5_000, date: daysAgo(1) }),
+        makeTx({ type: "income", amount: 5_000, date: thisMonth(1) }),
       ],
     });
     const m = computeMetrics(state);
