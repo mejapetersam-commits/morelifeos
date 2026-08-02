@@ -7,9 +7,7 @@ import type { Account, Allocation, FinanceState, Goal } from "./finance-types";
  */
 
 export function allocatedForAccount(allocations: Allocation[], accountId: string): number {
-  return allocations
-    .filter((a) => a.accountId === accountId)
-    .reduce((sum, a) => sum + a.amount, 0);
+  return allocations.filter((a) => a.accountId === accountId).reduce((sum, a) => sum + a.amount, 0);
 }
 
 export function allocatedForGoal(allocations: Allocation[], goalId: string): number {

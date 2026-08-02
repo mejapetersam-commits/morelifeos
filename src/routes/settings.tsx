@@ -163,7 +163,6 @@ function SettingsPage() {
           </div>
         </section>
 
-
         <DangerZone onReset={resetFinancialData} />
       </div>
 
