@@ -58,6 +58,7 @@ const categories = [
   "Business",
   "Investment",
   "Savings",
+  "Debt",
   "Income",
   "Other",
 ];
@@ -719,20 +720,30 @@ function AddTxDialog({
   const [category, setCategory] = useState("Food");
   const [accountId, setAccountId] = useState(accounts[0]?.id || "");
   const [toAccountId, setToAccountId] = useState(accounts[1]?.id || "");
+  const investmentAccounts = accounts.filter((a) => a.type === "investment");
+  const [toInvestmentAccountId, setToInvestmentAccountId] = useState(
+    investmentAccounts[0]?.id || "",
+  );
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [description, setDescription] = useState("");
   const [sourceId, setSourceId] = useState<string>("none");
+  const [sourceTouched, setSourceTouched] = useState(false);
 
-  const disabled = !accountId || !amount || Number(amount) <= 0;
+  const disabled =
+    !accountId ||
+    !amount ||
+    Number(amount) <= 0 ||
+    (type === "investment" && !toInvestmentAccountId);
 
   const submit = () => {
     if (disabled) return;
     onAdd({
       type,
       amount: Number(amount),
-      category: type === "income" ? "Income" : category,
+      category: type === "income" ? "Income" : type === "investment" ? "Investment" : category,
       accountId,
-      toAccountId: type === "transfer" ? toAccountId : undefined,
+      toAccountId:
+        type === "transfer" ? toAccountId : type === "investment" ? toInvestmentAccountId : undefined,
       date: new Date(date).toISOString(),
       description: description.trim() || undefined,
       sourceId: type === "income" && sourceId !== "none" ? sourceId : undefined,
@@ -740,7 +751,23 @@ function AddTxDialog({
     setAmount("");
     setDescription("");
     setSourceId("none");
+    setSourceTouched(false);
     setOpen(false);
+  };
+
+  // If the person picks an income account whose name matches an income
+  // source they've already set up (e.g. account "Salary" ↔ source
+  // "Salary"), default the link instead of leaving it as "None" — this is
+  // the connection that's easy to miss, and missing it is why money added
+  // here doesn't show up against that source on the Income tab.
+  const autoMatchSource = (currentAccountId: string) => {
+    if (sourceTouched) return;
+    const acct = accounts.find((a) => a.id === currentAccountId);
+    if (!acct) return;
+    const match = incomeSources.find(
+      (s) => s.name.trim().toLowerCase() === acct.name.trim().toLowerCase(),
+    );
+    setSourceId(match ? match.id : "none");
   };
 
   return (
@@ -762,7 +789,10 @@ function AddTxDialog({
             {(["income", "expense", "transfer", "investment"] as TxType[]).map((t) => (
               <button
                 key={t}
-                onClick={() => setType(t)}
+                onClick={() => {
+                  setType(t);
+                  if (t === "income") autoMatchSource(accountId);
+                }}
                 aria-pressed={type === t}
                 className={`rounded-lg border px-2 py-2 text-xs capitalize transition-colors ${
                   type === t
@@ -795,8 +825,16 @@ function AddTxDialog({
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="tx-account">{type === "transfer" ? "From account" : "Account"}</Label>
-            <Select value={accountId} onValueChange={setAccountId}>
+            <Label htmlFor="tx-account">
+              {type === "transfer" || type === "investment" ? "From account" : "Account"}
+            </Label>
+            <Select
+              value={accountId}
+              onValueChange={(v) => {
+                setAccountId(v);
+                if (type === "income") autoMatchSource(v);
+              }}
+            >
               <SelectTrigger id="tx-account">
                 <SelectValue />
               </SelectTrigger>
@@ -811,8 +849,14 @@ function AddTxDialog({
           </div>
           {type === "income" && incomeSources.length > 0 && (
             <div className="space-y-1.5">
-              <Label htmlFor="tx-source">Income source (optional)</Label>
-              <Select value={sourceId} onValueChange={setSourceId}>
+              <Label htmlFor="tx-source">Income source</Label>
+              <Select
+                value={sourceId}
+                onValueChange={(v) => {
+                  setSourceTouched(true);
+                  setSourceId(v);
+                }}
+              >
                 <SelectTrigger id="tx-source">
                   <SelectValue />
                 </SelectTrigger>
@@ -825,6 +869,12 @@ function AddTxDialog({
                   ))}
                 </SelectContent>
               </Select>
+              {sourceId === "none" && (
+                <p className="text-xs text-muted-foreground">
+                  Not linked to a source — it'll count toward Monthly Income but won't show on
+                  that source's card on the Income tab.
+                </p>
+              )}
             </div>
           )}
           {type === "transfer" && (
@@ -846,7 +896,33 @@ function AddTxDialog({
               </Select>
             </div>
           )}
-          {type !== "income" && type !== "transfer" && (
+          {type === "investment" && (
+            <div className="space-y-1.5">
+              <Label htmlFor="tx-to-investment">To investment account</Label>
+              {investmentAccounts.length > 0 ? (
+                <Select value={toInvestmentAccountId} onValueChange={setToInvestmentAccountId}>
+                  <SelectTrigger id="tx-to-investment">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {investmentAccounts
+                      .filter((a) => a.id !== accountId)
+                      .map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  No investment accounts yet — add one on the Investments tab first, then it'll
+                  show up here as a destination.
+                </p>
+              )}
+            </div>
+          )}
+          {type !== "income" && type !== "transfer" && type !== "investment" && (
             <div className="space-y-1.5">
               <Label htmlFor="tx-category">Category</Label>
               <Select value={category} onValueChange={setCategory}>
@@ -937,9 +1013,9 @@ function EditTransactionDialog({
           <DialogTitle>Edit transaction</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          {transaction.type !== "transfer" && (
-            <div className="grid grid-cols-3 gap-2" role="group" aria-label="Transaction type">
-              {(["income", "expense", "investment"] as TxType[]).map((t) => (
+          {transaction.type !== "transfer" && transaction.type !== "investment" && (
+            <div className="grid grid-cols-2 gap-2" role="group" aria-label="Transaction type">
+              {(["income", "expense"] as TxType[]).map((t) => (
                 <button
                   key={t}
                   onClick={() => setType(t)}
@@ -1000,10 +1076,11 @@ function EditTransactionDialog({
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
-          {transaction.type === "transfer" && (
+          {(transaction.type === "transfer" || transaction.type === "investment") && (
             <p className="text-xs text-muted-foreground">
-              Transfers keep their type and accounts fixed here — delete and re-add if you need to
-              change which accounts were involved.
+              {transaction.type === "transfer" ? "Transfers" : "Investment contributions"} keep
+              their type and accounts fixed here — delete and re-add if you need to change which
+              accounts were involved.
             </p>
           )}
           <Button

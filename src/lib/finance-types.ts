@@ -30,6 +30,7 @@ export type Category =
   | "Business"
   | "Investment"
   | "Savings"
+  | "Debt"
   | "Income"
   | "Other";
 

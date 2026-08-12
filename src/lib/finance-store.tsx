@@ -130,7 +130,11 @@ function applyTxToAccounts(accounts: Account[], tx: Transaction): Account[] {
     if (a.id === tx.accountId) {
       return { ...a, balance: a.balance + accountDelta(tx) };
     }
-    if (tx.type === "transfer" && a.id === tx.toAccountId) {
+    // Both "transfer" and "investment" transactions move money FROM
+    // accountId TO toAccountId — an investment contribution is really just
+    // a transfer into an investment-type account, so the destination
+    // account needs the same credit a transfer would get.
+    if ((tx.type === "transfer" || tx.type === "investment") && a.id === tx.toAccountId) {
       return { ...a, balance: a.balance + tx.amount };
     }
     return a;
