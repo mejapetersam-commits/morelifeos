@@ -820,8 +820,9 @@ export interface SafeToSpendResult {
   windowDays: number;
 }
 
-function monthsUntil(deadline: string, now: Date): number {
+function monthsUntil(deadline: string, now: Date): number | null {
   const d = new Date(deadline);
+  if (Number.isNaN(d.getTime())) return null; // no usable deadline — don't let it poison the total
   const months = (d.getFullYear() - now.getFullYear()) * 12 + (d.getMonth() - now.getMonth());
   return Math.max(1, months);
 }
@@ -855,6 +856,7 @@ export function computeSafeToSpend(
     const remaining = Math.max(0, g.target - g.saved);
     if (remaining <= 0) return s;
     const months = monthsUntil(g.deadline, now);
+    if (months === null) return s;
     return s + remaining / months;
   }, 0);
 

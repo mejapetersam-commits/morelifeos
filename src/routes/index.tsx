@@ -49,6 +49,15 @@ import {
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { Account } from "@/lib/finance-types";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -71,7 +80,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const { state, setProfile } = useFinance();
+  const { state, setProfile, addTransaction } = useFinance();
   const { data: session } = useSession();
   const firstName = session?.user?.name?.split(" ")[0];
   const m = computeMetrics(state);
@@ -83,6 +92,7 @@ function Home() {
   const monthlySurplus = m.monthIncome - m.monthExpenses;
   const surplusEstimate = monthlySurplus > 0 ? monthlySurplus : m.monthIncome * 0.1;
   const sts = computeSafeToSpend(state, m.availableCash);
+  const hasSavingsAccount = state.accounts.some((a) => a.type === "investment");
 
   // Sparklines
   const sparkNet = series.map((s) => s.net + m.netWorth * 0.9);
@@ -184,8 +194,12 @@ function Home() {
                 <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                   Safe to spend
                 </div>
-                <div className="mt-1 font-display text-3xl font-semibold num">
-                  {formatMoney(Math.max(0, sts.safeToSpend), currency)}
+                <div
+                  className={`mt-1 font-display text-3xl font-semibold num ${
+                    sts.safeToSpend < 0 ? "text-coral" : ""
+                  }`}
+                >
+                  {formatMoney(sts.safeToSpend, currency)}
                 </div>
                 <p className="mt-2 max-w-md text-sm text-muted-foreground">
                   {sts.safeToSpend >= 0
@@ -269,14 +283,20 @@ function Home() {
             />
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <KpiCard
-              label="Savings Rate"
-              accent="gold"
-              value={<span className="num">{Math.round(m.savingsRate * 100)}%</span>}
-              delta={deltaSavings}
-              meaning="Share of income you keep. Above 20% is a strong foundation."
-            />
+          <div
+            className={`mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 ${
+              hasSavingsAccount ? "lg:grid-cols-4" : "lg:grid-cols-3"
+            }`}
+          >
+            {hasSavingsAccount && (
+              <KpiCard
+                label="Savings Rate"
+                accent="gold"
+                value={<span className="num">{Math.round(m.savingsRate * 100)}%</span>}
+                delta={deltaSavings}
+                meaning="Share of income you keep. Above 20% is a strong foundation."
+              />
+            )}
             <KpiCard
               label="Financial Health"
               accent="royal"
@@ -304,7 +324,19 @@ function Home() {
             <DebtCard
               debt={state.profile.debt}
               currency={currency}
+              accounts={state.accounts}
               onSave={(debt) => setProfile({ debt })}
+              onRepay={(accountId, amount) => {
+                addTransaction({
+                  type: "expense",
+                  amount,
+                  category: "Debt",
+                  accountId,
+                  date: new Date().toISOString(),
+                  description: "Debt repayment",
+                });
+                setProfile({ debt: Math.max(0, state.profile.debt - amount) });
+              }}
             />
           </div>
         </section>
@@ -949,14 +981,29 @@ function heroCopy(
 function DebtCard({
   debt,
   currency,
+  accounts,
   onSave,
+  onRepay,
 }: {
   debt: number;
   currency: string;
+  accounts: Account[];
   onSave: (debt: number) => void;
+  onRepay: (accountId: string, amount: number) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(String(debt || ""));
+  const [repaying, setRepaying] = useState(false);
+  const [repayAccountId, setRepayAccountId] = useState(accounts[0]?.id || "");
+  const [repayAmount, setRepayAmount] = useState("");
+
+  const submitRepay = () => {
+    const amount = Number(repayAmount);
+    if (!repayAccountId || !amount || amount <= 0) return;
+    onRepay(repayAccountId, Math.min(amount, debt));
+    setRepayAmount("");
+    setRepaying(false);
+  };
 
   if (editing) {
     return (
@@ -972,6 +1019,10 @@ function DebtCard({
           onChange={(e) => setValue(e.target.value)}
           aria-label="Outstanding debt"
         />
+        <p className="mt-2 text-xs text-muted-foreground">
+          For a starting balance or a correction. To pay it down with real money, use Repay
+          instead — it updates an account too.
+        </p>
         <div className="mt-3 flex gap-2">
           <Button
             size="sm"
@@ -997,6 +1048,70 @@ function DebtCard({
     );
   }
 
+  if (repaying) {
+    return (
+      <div className="rounded-3xl bg-surface-elevated p-5 shadow-soft">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground">Repay debt</div>
+        {accounts.length > 0 ? (
+          <>
+            <div className="mt-3 space-y-1.5">
+              <Label htmlFor="debt-repay-account" className="text-xs">
+                From account
+              </Label>
+              <Select value={repayAccountId} onValueChange={setRepayAccountId}>
+                <SelectTrigger id="debt-repay-account">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="mt-3 space-y-1.5">
+              <Label htmlFor="debt-repay-amount" className="text-xs">
+                Amount
+              </Label>
+              <Input
+                id="debt-repay-amount"
+                inputMode="numeric"
+                autoFocus
+                value={repayAmount}
+                onChange={(e) => setRepayAmount(e.target.value)}
+                placeholder={String(debt)}
+              />
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Deducts from the account and reduces outstanding debt by the same amount.
+            </p>
+          </>
+        ) : (
+          <p className="mt-3 text-sm text-muted-foreground">
+            Add an account on the Money tab first — repayment needs somewhere to draw from.
+          </p>
+        )}
+        <div className="mt-3 flex gap-2">
+          <Button size="sm" onClick={submitRepay} disabled={accounts.length === 0}>
+            Confirm repayment
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setRepayAmount("");
+              setRepaying(false);
+            }}
+          >
+            Cancel
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <KpiCard
       label="Outstanding Debt"
@@ -1004,19 +1119,29 @@ function DebtCard({
       value={<AnimatedMoney value={debt} currency={currency} />}
       meaning={
         debt > 0
-          ? "Subtracted from net worth. Tap edit to update the balance."
+          ? "Subtracted from net worth. Repay from an account, or edit to correct the balance."
           : "Nothing outstanding. Tap edit if that changes."
       }
       action={
-        <button
-          onClick={() => {
-            setValue(String(debt || ""));
-            setEditing(true);
-          }}
-          className="text-xs font-medium text-amber hover:underline"
-        >
-          Edit
-        </button>
+        <div className="flex items-center gap-3">
+          {debt > 0 && (
+            <button
+              onClick={() => setRepaying(true)}
+              className="text-xs font-medium text-amber hover:underline"
+            >
+              Repay
+            </button>
+          )}
+          <button
+            onClick={() => {
+              setValue(String(debt || ""));
+              setEditing(true);
+            }}
+            className="text-xs font-medium text-amber hover:underline"
+          >
+            Edit
+          </button>
+        </div>
       }
     />
   );
