@@ -8,35 +8,59 @@ on:
     - cron: '0 6 * * *'   # daily 06:00 UTC (09:00 EAT) health check
 
 jobs:
-  qa:
+  # Runs automatically on every push to main + the daily schedule.
+  # Read-only checks only — safe to point at production.
+  smoke-prod:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - run: npm install
+      - run: npx playwright install --with-deps
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
-
-      # On push to main, give Vercel a moment to finish deploying before we hit it
       - name: Wait for deployment to settle
         if: github.event_name == 'push'
         run: sleep 45
 
-      - name: Run QA suite
+      - name: Run smoke tests against production
         env:
-          QA_BASE_URL: https://morelifeos.vercel.app
+          BASE_URL: https://morelifeos.vercel.app
+        run: npx playwright test tests/smoke.spec.ts
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-report
+          path: playwright-report/
+          retention-days: 14
+
+  # Only runs when you trigger it manually (Actions tab → QA Checklist → Run workflow).
+  # Creates/edits real data, so it targets a preview deployment + dedicated test
+  # account, never production. Needs PREVIEW_BASE_URL, TEST_USER_EMAIL,
+  # TEST_USER_PASSWORD set as repo secrets first.
+  full-suite:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npx playwright install --with-deps
+
+      - name: Run full test suite against preview
+        env:
+          BASE_URL: ${{ secrets.PREVIEW_BASE_URL }}
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
         run: npx playwright test
 
-      - name: Upload HTML report
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: full-report
           path: playwright-report/
           retention-days: 14
