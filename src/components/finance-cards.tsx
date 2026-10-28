@@ -153,6 +153,7 @@ export function KpiCard({
   accent = "ocean",
   meaning,
   action,
+  compact,
 }: {
   label: string;
   value: ReactNode;
@@ -162,9 +163,15 @@ export function KpiCard({
   accent?: Accent;
   meaning?: string;
   action?: ReactNode;
+  compact?: boolean;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-3xl bg-surface-elevated p-6 shadow-soft transition-all duration-500 hover:shadow-lift hover:-translate-y-0.5">
+    <div
+      className={cn(
+        "group relative overflow-hidden bg-surface-elevated shadow-soft transition-all duration-500 hover:shadow-lift hover:-translate-y-0.5",
+        compact ? "rounded-2xl p-4" : "rounded-3xl p-6",
+      )}
+    >
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-px opacity-70"
         style={{
@@ -183,16 +190,28 @@ export function KpiCard({
           {action}
         </div>
       </div>
-      <div className="mt-3 font-display text-[28px] font-semibold leading-tight tracking-tight">
+      <div
+        className={cn(
+          "font-display font-semibold leading-tight tracking-tight",
+          compact ? "mt-1.5 text-xl" : "mt-3 text-[28px]",
+        )}
+      >
         {value}
       </div>
-      {spark && spark.length > 1 && (
+      {!compact && spark && spark.length > 1 && (
         <div className="mt-3 -mx-2">
           <Sparkline data={spark} accent={accent} />
         </div>
       )}
       {meaning && (
-        <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">{meaning}</p>
+        <p
+          className={cn(
+            "text-[13px] leading-relaxed text-muted-foreground",
+            compact ? "mt-1.5" : "mt-3",
+          )}
+        >
+          {meaning}
+        </p>
       )}
     </div>
   );
