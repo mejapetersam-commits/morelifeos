@@ -9,29 +9,13 @@ import {
   computeMetrics,
   computeSafeToSpend,
   formatMoney,
-  formatPct,
   generateInsights,
   goalEta,
   greeting,
-  monthlySeries,
   pct,
 } from "@/lib/finance-utils";
 import { computeHealthScore } from "@/lib/health-score";
-import { forecastCashFlow } from "@/lib/forecast";
 import { AnimatedMoney, KpiCard, ProgressRing, SectionTitle } from "@/components/finance-cards";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
 import {
   ArrowUpRight,
   Plus,
@@ -41,7 +25,6 @@ import {
   Repeat,
   Sparkles,
   CalendarClock,
-  Receipt,
   TrendingUp,
   ShieldCheck,
   X,
@@ -85,45 +68,18 @@ function Home() {
   const firstName = session?.user?.name?.split(" ")[0];
   const m = computeMetrics(state);
   const insights = generateInsights(state, m);
-  const series = monthlySeries(state.transactions, 6);
   const currency = state.profile.currency;
 
   const netWorth = m.netWorth;
   const monthlySurplus = m.monthIncome - m.monthExpenses;
   const surplusEstimate = monthlySurplus > 0 ? monthlySurplus : m.monthIncome * 0.1;
   const sts = computeSafeToSpend(state, m.availableCash);
-  const hasSavingsAccount = state.accounts.some((a) => a.type === "investment");
-
-  // Sparklines
-  const sparkNet = series.map((s) => s.net + m.netWorth * 0.9);
-  const sparkCash = series.map((s) => Math.max(0, s.net) + m.availableCash * 0.85);
-  const sparkIn = series.map((s) => s.income);
-  const sparkOut = series.map((s) => s.expenses);
-
-  const deltaIncome = pct(m.monthIncome, m.prevIncome);
-  const deltaExpenses = pct(m.monthExpenses, m.prevExpenses);
-  const deltaSavings =
-    m.prevIncome > 0 ? m.savingsRate - (m.prevIncome - m.prevExpenses) / m.prevIncome : 0;
-
   // Multi-factor, explainable score (src/lib/health-score.ts). Every point is
   // traceable to a named factor, so the card can say WHY the number moved.
   const healthResult = computeHealthScore(state, m);
   const health = healthResult?.score ?? null;
-  const healthLabel = healthResult?.grade ?? "Not enough data yet";
-  const healthMeaning = healthResult
-    ? healthResult.weakest[0]
-      ? `${healthResult.grade} — biggest drag: ${healthResult.weakest[0].label.toLowerCase()}. ${healthResult.weakest[0].detail}`
-      : `${healthResult.grade} — savings, runway, debt and cash flow are all in good shape.`
-    : "Add income, spending or accounts to unlock your score.";
-
-  // 90-day cash-flow projection from scheduled bills plus recent drift.
-  const forecast = forecastCashFlow(state, { days: 90 });
-
   const now = new Date();
   const hero = heroCopy(state, m);
-
-  // Recent activity
-  const recent = state.transactions.slice(0, 4);
 
   // Upcoming bills — sourced from real recurring transactions (Money > Recurring)
   const bills = deriveUpcomingBills(state);
@@ -144,26 +100,12 @@ function Home() {
     : Infinity;
   const reviewDue = daysSinceLastReview >= 7;
 
-  const categoryData = Object.entries(m.byCategory)
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value);
-  const CATEGORY_COLORS = [
-    "var(--gold)",
-    "var(--emerald)",
-    "var(--coral)",
-    "var(--royal)",
-    "var(--indigo)",
-    "var(--amber)",
-    "var(--sage)",
-    "var(--ocean)",
-  ];
-
   return (
     <>
       <OnboardingModal />
       <AppShell>
         {/* ─── Hero ────────────────────────────────────────────── */}
-        <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-ocean via-ocean to-[oklch(0.28_0.06_255)] p-8 text-ocean-foreground shadow-hero md:p-12">
+        <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-ocean via-ocean to-[oklch(0.28_0.06_255)] p-5 text-ocean-foreground shadow-hero md:p-7">
           <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-gold/20 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-24 -left-16 h-64 w-64 rounded-full bg-sage/15 blur-3xl" />
           <div className="relative">
@@ -175,20 +117,20 @@ function Home() {
                 month: "long",
               })}
             </div>
-            <h1 className="mt-4 max-w-2xl font-display text-3xl font-semibold leading-[1.15] tracking-tight md:text-[42px]">
+            <h1 className="mt-2 max-w-2xl font-display text-2xl font-semibold leading-[1.15] tracking-tight md:text-[28px]">
               {greeting(new Date(), firstName)}.
               <br />
               <span className="text-ocean-foreground/80">{hero.headline}</span>
             </h1>
-            <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-ocean-foreground/70">
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-ocean-foreground/70">
               {hero.body}
             </p>
           </div>
         </section>
 
         {/* ─── Safe to Spend ───────────────────────────────────── */}
-        <section className="mt-8">
-          <div className="rounded-3xl bg-surface-elevated p-7 shadow-soft">
+        <section className="mt-5">
+          <div className="rounded-3xl bg-surface-elevated p-5 shadow-soft">
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div>
                 <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -201,7 +143,7 @@ function Home() {
                 >
                   {formatMoney(sts.safeToSpend, currency)}
                 </div>
-                <p className="mt-2 max-w-md text-sm text-muted-foreground">
+                <p className="mt-1 max-w-md text-xs text-muted-foreground">
                   {sts.safeToSpend >= 0
                     ? "What's left to spend after bills due in the next 30 days and this month's goal contributions."
                     : "Bills and goal contributions due soon add up to more than your available cash right now — worth a look before spending freely."}
@@ -230,96 +172,31 @@ function Home() {
         </section>
 
         {/* ─── KPI Cards ───────────────────────────────────────── */}
-        <section className="mt-10">
-          <SectionTitle eyebrow="At a glance" title="Your financial position" />
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <section className="mt-5">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <KpiCard
+              compact
               label="Net Worth"
               accent="ocean"
               value={<AnimatedMoney value={netWorth} currency={currency} />}
               delta={pct(netWorth, netWorth - monthlySurplus)}
-              spark={sparkNet}
-              meaning={
-                monthlySurplus >= 0
-                  ? "Growing steadily as savings and investments compound."
-                  : "Slightly compressed this month — worth a look."
-              }
             />
             <KpiCard
+              compact
               label="Available Cash"
               accent="sage"
               value={<AnimatedMoney value={m.availableCash} currency={currency} />}
-              spark={sparkCash}
-              meaning={
-                m.monthExpenses > 0
-                  ? `About ${(m.availableCash / Math.max(1, m.monthExpenses)).toFixed(1)}× your monthly spending — your runway.`
-                  : "Liquid funds ready across your active accounts."
-              }
             />
             <KpiCard
-              label="Monthly Income"
-              accent="emerald"
-              value={<AnimatedMoney value={m.monthIncome} currency={currency} />}
-              delta={deltaIncome}
-              spark={sparkIn}
-              meaning={
-                m.monthIncome > 0
-                  ? "What's flowing in this month across all sources."
-                  : "Log this month's income to see the full picture."
-              }
-            />
-            <KpiCard
-              label="Monthly Spending"
-              accent="coral"
-              value={<AnimatedMoney value={m.monthExpenses} currency={currency} />}
-              delta={deltaExpenses}
-              invert
-              spark={sparkOut}
-              meaning={
-                m.monthExpenses > 0
-                  ? "Everything leaving your accounts this month."
-                  : "No expenses recorded yet this month."
-              }
-            />
-          </div>
-
-          <div
-            className={`mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 ${
-              hasSavingsAccount ? "lg:grid-cols-4" : "lg:grid-cols-3"
-            }`}
-          >
-            {hasSavingsAccount && (
-              <KpiCard
-                label="Savings Rate"
-                accent="gold"
-                value={<span className="num">{Math.round(m.savingsRate * 100)}%</span>}
-                delta={deltaSavings}
-                meaning="Share of income you keep. Above 20% is a strong foundation."
-              />
-            )}
-            <KpiCard
+              compact
               label="Financial Health"
               accent="royal"
               value={
                 <span>
-                  <span className="num">{health}</span>
-                  <span className="ml-1 text-base font-normal text-muted-foreground">/ 100</span>
+                  <span className="num">{health ?? "—"}</span>
+                  <span className="ml-1 text-sm font-normal text-muted-foreground">/ 100</span>
                 </span>
               }
-              meaning={healthMeaning}
-            />
-            <KpiCard
-              label="Investments"
-              accent="indigo"
-              value={
-                <AnimatedMoney
-                  value={state.accounts
-                    .filter((a) => a.type === "investment")
-                    .reduce((s, a) => s + a.balance, 0)}
-                  currency={currency}
-                />
-              }
-              meaning="Capital working for your future self."
             />
             <DebtCard
               debt={state.profile.debt}
@@ -341,41 +218,9 @@ function Home() {
           </div>
         </section>
 
-        {/* ─── Cash Flow Forecast ──────────────────────────────── */}
-        <section className="mt-12">
-          <SectionTitle eyebrow="Forecast" title="Where your money is heading" />
-          <div className="rounded-3xl bg-surface-elevated p-8 shadow-lift">
-            <div className="grid gap-6 sm:grid-cols-3">
-              {forecast.horizons.map((h) => (
-                <div key={h.days}>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    In {h.days} days
-                  </p>
-                  <p className="mt-1 text-2xl font-semibold num">
-                    {formatMoney(h.balance, currency)}
-                  </p>
-                  <p className={`mt-1 text-sm ${h.change >= 0 ? "text-sage" : "text-coral"}`}>
-                    {h.change >= 0 ? "+" : "−"}
-                    {formatMoney(Math.abs(h.change), currency)} vs today
-                  </p>
-                </div>
-              ))}
-            </div>
-            <p className="mt-6 text-sm text-muted-foreground">
-              {forecast.shortfallDate
-                ? `Heads up — on this trajectory your cash runs out around ${new Date(
-                    forecast.shortfallDate,
-                  ).toLocaleDateString(undefined, { day: "numeric", month: "long" })}.`
-                : forecast.lowConfidence
-                  ? "Based on scheduled bills only — add a few weeks of transactions for a sharper projection."
-                  : `Projected from your scheduled bills and your recent spending pattern. Health grade: ${healthLabel}.`}
-            </p>
-          </div>
-        </section>
-
         {/* ─── Financial Intelligence ──────────────────────────── */}
         {insights.length > 0 && (
-          <section className="mt-12">
+          <section className="mt-5">
             <SectionTitle
               eyebrow="Financial Intelligence"
               title="What deserves your attention"
@@ -388,7 +233,7 @@ function Home() {
                 </Link>
               }
             />
-            <div className="relative overflow-hidden rounded-3xl bg-surface-elevated p-8 shadow-lift">
+            <div className="relative overflow-hidden rounded-3xl bg-surface-elevated p-5 shadow-lift">
               <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-indigo/10 blur-3xl" />
               <div className="relative max-w-xl">
                 <IntelligenceItem insight={insights[0]} index={0} />
@@ -400,167 +245,9 @@ function Home() {
           </section>
         )}
 
-        {/* ─── Cash Flow / Spending + Goal ─────────────────────── */}
-        <section className="mt-12 grid gap-6 lg:grid-cols-5">
-          <div className="lg:col-span-3 rounded-3xl bg-surface-elevated p-7 shadow-soft">
-            <Tabs defaultValue="cashflow">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                  Cash Flow &amp; Spending
-                </div>
-                <TabsList>
-                  <TabsTrigger value="cashflow">Cash Flow</TabsTrigger>
-                  <TabsTrigger value="category">By Category</TabsTrigger>
-                </TabsList>
-              </div>
-
-              <TabsContent value="cashflow" className="mt-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-baseline gap-3">
-                    <span className="font-display text-3xl font-semibold num">
-                      {formatMoney(monthlySurplus, currency)}
-                    </span>
-                    <span className="text-sm text-muted-foreground">net this month</span>
-                  </div>
-                  <div className="hidden items-center gap-4 text-[11px] uppercase tracking-widest text-muted-foreground md:flex">
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="h-2 w-2 rounded-full bg-emerald" /> Income
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="h-2 w-2 rounded-full bg-coral" /> Expenses
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-6 h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={series} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="inGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="var(--emerald)" stopOpacity={0.35} />
-                          <stop offset="100%" stopColor="var(--emerald)" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="outGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="var(--coral)" stopOpacity={0.28} />
-                          <stop offset="100%" stopColor="var(--coral)" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid
-                        stroke="var(--border)"
-                        strokeDasharray="2 4"
-                        vertical={false}
-                      />
-                      <XAxis
-                        dataKey="label"
-                        stroke="var(--muted-foreground)"
-                        fontSize={11}
-                        tickLine={false}
-                        axisLine={false}
-                        dy={6}
-                      />
-                      <YAxis hide />
-                      <Tooltip
-                        cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
-                        contentStyle={{
-                          background: "var(--card)",
-                          border: "1px solid var(--border)",
-                          borderRadius: 12,
-                          fontSize: 12,
-                          boxShadow: "var(--shadow-lift)",
-                        }}
-                        formatter={(v: number, k: string) => [formatMoney(v, currency), k]}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="income"
-                        stroke="var(--emerald)"
-                        strokeWidth={2}
-                        fill="url(#inGrad)"
-                        animationDuration={900}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="expenses"
-                        stroke="var(--coral)"
-                        strokeWidth={2}
-                        fill="url(#outGrad)"
-                        animationDuration={900}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="category" className="mt-4">
-                {categoryData.length === 0 ? (
-                  <EmptyState
-                    icon={PiggyBank}
-                    title="No expenses recorded this month yet."
-                    body="Once you log a few, this breaks down where your money is actually going."
-                  />
-                ) : (
-                  <div className="flex flex-col items-center gap-8 md:flex-row">
-                    <div className="h-56 w-56 shrink-0">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={categoryData}
-                            dataKey="value"
-                            nameKey="name"
-                            innerRadius={58}
-                            outerRadius={90}
-                            paddingAngle={2}
-                            strokeWidth={0}
-                            animationDuration={900}
-                          >
-                            {categoryData.map((_, i) => (
-                              <Cell key={i} fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            contentStyle={{
-                              background: "var(--card)",
-                              border: "1px solid var(--border)",
-                              borderRadius: 12,
-                              fontSize: 12,
-                              boxShadow: "var(--shadow-lift)",
-                            }}
-                            formatter={(v: number) => formatMoney(v, currency)}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <ul className="w-full space-y-2.5">
-                      {categoryData.map((c, i) => {
-                        const share = m.monthExpenses > 0 ? c.value / m.monthExpenses : 0;
-                        return (
-                          <li
-                            key={c.name}
-                            className="flex items-center justify-between text-[13px]"
-                          >
-                            <span className="flex items-center gap-2.5">
-                              <span
-                                className="h-2.5 w-2.5 rounded-full"
-                                style={{ background: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }}
-                              />
-                              {c.name}
-                              <span className="text-muted-foreground">
-                                {Math.round(share * 100)}%
-                              </span>
-                            </span>
-                            <span className="num font-semibold">
-                              {formatMoney(c.value, currency)}
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          <div className="lg:col-span-2 rounded-3xl bg-surface-elevated p-7 shadow-soft">
+        {/* ─── Goal + Upcoming Bills ───────────────────────────── */}
+        <section className="mt-5 grid gap-4 lg:grid-cols-2">
+          <div className="rounded-3xl bg-surface-elevated p-5 shadow-soft">
             <div className="flex items-center justify-between">
               <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                 Goal Progress
@@ -613,41 +300,7 @@ function Home() {
               />
             )}
           </div>
-        </section>
-
-        {/* ─── Recent Activity + Upcoming Bills ────────────────── */}
-        <section className="mt-12 grid gap-6 lg:grid-cols-5">
-          <div className="lg:col-span-3 rounded-3xl bg-surface-elevated p-7 shadow-soft">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                  Recent Activity
-                </div>
-                <h3 className="mt-1 font-display text-xl font-semibold">Money in motion</h3>
-              </div>
-              <Link to="/money" className="text-xs font-medium text-ocean hover:opacity-80">
-                View all →
-              </Link>
-            </div>
-            <div className="mt-5">
-              {recent.length === 0 ? (
-                <EmptyState
-                  icon={Receipt}
-                  title="No transactions yet."
-                  body="Every entry builds a clearer picture of where money flows."
-                  cta={{ to: "/money", label: "Log a transaction" }}
-                />
-              ) : (
-                <ul className="divide-y divide-border/60">
-                  {recent.map((t) => (
-                    <TxRow key={t.id} tx={t} currency={currency} />
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-
-          <div className="lg:col-span-2 rounded-3xl bg-surface-elevated p-7 shadow-soft">
+          <div className="rounded-3xl bg-surface-elevated p-5 shadow-soft">
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -675,7 +328,7 @@ function Home() {
         </section>
 
         {/* ─── Quick Actions ───────────────────────────────────── */}
-        <section className="mt-12">
+        <section className="mt-5">
           <SectionTitle eyebrow="Shortcuts" title="Quick actions" />
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
             <QuickAction to="/money" icon={Plus} label="Add Transaction" accent="ocean" />
@@ -1007,7 +660,7 @@ function DebtCard({
 
   if (editing) {
     return (
-      <div className="rounded-3xl bg-surface-elevated p-5 shadow-soft">
+      <div className="rounded-2xl bg-surface-elevated p-4 shadow-soft">
         <div className="text-xs uppercase tracking-wider text-muted-foreground">
           Outstanding debt
         </div>
@@ -1020,8 +673,8 @@ function DebtCard({
           aria-label="Outstanding debt"
         />
         <p className="mt-2 text-xs text-muted-foreground">
-          For a starting balance or a correction. To pay it down with real money, use Repay
-          instead — it updates an account too.
+          For a starting balance or a correction. To pay it down with real money, use Repay instead
+          — it updates an account too.
         </p>
         <div className="mt-3 flex gap-2">
           <Button
@@ -1114,14 +767,10 @@ function DebtCard({
 
   return (
     <KpiCard
+      compact
       label="Outstanding Debt"
       accent="amber"
       value={<AnimatedMoney value={debt} currency={currency} />}
-      meaning={
-        debt > 0
-          ? "Subtracted from net worth. Repay from an account, or edit to correct the balance."
-          : "Nothing outstanding. Tap edit if that changes."
-      }
       action={
         <div className="flex items-center gap-3">
           {debt > 0 && (
