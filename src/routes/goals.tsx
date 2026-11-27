@@ -152,7 +152,7 @@ function AddContribution({
   if (accounts.length === 0) {
     return (
       <p className="mt-4 text-xs text-muted-foreground">
-        Add an account on the Money page first — a contribution needs to come from somewhere.
+        Add an account on the Money page first. A contribution needs to come from somewhere.
       </p>
     );
   }
@@ -190,7 +190,7 @@ function AddContribution({
         </SelectContent>
       </Select>
       <p className="text-[11px] text-muted-foreground">
-        This moves real money — it posts a transaction and reduces the account's balance.
+        This moves real money. It posts a transaction and reduces the account's balance.
       </p>
     </div>
   );
@@ -274,7 +274,7 @@ function AddGoalDialog({
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            "Already saved" is a starting point only, not linked to a transaction — use "Add
+            "Already saved" is a starting point only, not linked to a transaction. Use "Add
             contribution" afterwards for amounts that should move real money.
           </p>
           <Button
@@ -359,7 +359,7 @@ function EditGoalDialog({
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            To change the saved amount, use "Add contribution" on the goal card instead — that keeps
+            To change the saved amount, use "Add contribution" on the goal card instead. That keeps
             it linked to a real transaction.
           </p>
           <Button
@@ -384,7 +384,7 @@ function MiniStat({ label, value }: { label: string; value: string }) {
 }
 
 /**
- * Allocation panel. Assigning money to a goal never moves it — the
+ * Allocation panel. Assigning money to a goal never moves it. The
  * account balance stays put and only its "available to allocate" drops.
  */
 function GoalAllocations({
@@ -464,7 +464,7 @@ function GoalAllocations({
                   const view = accountAllocationView(a, allocations);
                   return (
                     <SelectItem key={a.id} value={a.id}>
-                      {a.name} — {formatMoney(view.available, currency)} free
+                      {a.name} · {formatMoney(view.available, currency)} free
                     </SelectItem>
                   );
                 })}
@@ -489,7 +489,7 @@ function GoalAllocations({
           {selected && parsed > 0 && check && !check.ok && (
             <p className="flex items-center gap-1.5 text-xs text-coral">
               <AlertTriangle className="h-3.5 w-3.5" />
-              Over-allocated by {formatMoney(check.overBy, currency)} — {selected.name} has{" "}
+              Over-allocated by {formatMoney(check.overBy, currency)} because {selected.name} has{" "}
               {formatMoney(Math.max(0, check.max), currency)} available.
             </p>
           )}
