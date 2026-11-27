@@ -54,7 +54,7 @@ function Home() {
             <div className="rounded-2xl border border-border/70 bg-surface p-4"><div className="text-sm font-semibold">3. Track evidence, not intentions</div><p className="mt-1 text-xs leading-relaxed text-muted-foreground">Planned calendar events stay separate from completed actions. Your streak, day count and milestone celebrations will update only from recorded execution.</p></div>
             <p className="px-1 text-[11px] leading-relaxed text-muted-foreground">The challenge is not active yet. We still need to lock the rules before day 1, so no progress or streak is being fabricated.</p>
           </div>
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button onClick={() => setChallengeOpen(false)} className="rounded-xl border border-border px-4 py-2.5 text-sm font-semibold transition hover:bg-accent">Close</button><Link to="/plan" onClick={() => setChallengeOpen(false)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-sage px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:-translate-y-0.5 hover:brightness-105">Set up in Plan <ArrowRight className="h-4 w-4" /></Link></div>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button onClick={() => setChallengeOpen(false)} className="rounded-xl border border-border px-4 py-2.5 text-sm font-semibold transition hover:bg-accent">Close</button><Link to="/plan" onClick={() => setChallengeOpen(false)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-sage px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:-translate-y-0.5 hover:brightness-105">View Plan <ArrowRight className="h-4 w-4" /></Link></div>
         </DialogContent>
       </Dialog>
       <Dialog open={detail !== null} onOpenChange={(open) => { if (!open) setDetail(null); }}>
@@ -90,7 +90,7 @@ function Home() {
                 <button onClick={() => setDetail("day")} className="flex items-center gap-2 text-sm font-semibold transition hover:text-sage"><CalendarDays className="h-4 w-4 text-ocean" /> My day <span className="text-[10px] font-medium text-muted-foreground">Details</span></button>
                 <p className="mt-1 text-xs text-muted-foreground">Your schedule, in one clear timeline</p>
               </div>
-              <Link to="/plan" className="text-xs font-semibold text-sage hover:opacity-75">Full calendar <ArrowUpRight className="ml-1 inline h-3 w-3" /></Link>
+              <Link to="/plan" className="text-xs font-semibold text-sage hover:opacity-75">Calendar setup <ArrowUpRight className="ml-1 inline h-3 w-3" /></Link>
             </div>
             <div className="p-5 md:p-6">
               <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -106,7 +106,7 @@ function Home() {
                 <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">
                   Google Calendar is selected as your primary calendar. Connect authorisation to bring in today's real events.
                 </p>
-                <Link to="/plan" className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-sage">Set up calendar connection <ArrowRight className="h-3 w-3" /></Link>
+                <Link to="/plan" className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-sage">View connection status <ArrowRight className="h-3 w-3" /></Link>
               </div>
               <div className="mt-4 grid grid-cols-3 gap-2">
                 <MiniStat label="Scheduled" value="Not connected" />
