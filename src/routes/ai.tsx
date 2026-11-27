@@ -58,13 +58,13 @@ function AiPage() {
           <div className="font-display text-base font-semibold text-foreground">How this works</div>
           <ul className="mt-3 space-y-2 leading-relaxed">
             <li>
-              • Every observation is derived from your recorded activity — nothing is invented.
+              • Every observation is derived from your recorded activity. Nothing is invented.
             </li>
             <li>
-              • Save any suggestion to your Inbox to act on later — nothing changes automatically,
+              • Save any suggestion to your Inbox to act on later. Nothing changes automatically,
               and doing nothing is a valid choice.
             </li>
-            <li>• FinanceOS avoids shame and never makes irreversible changes on your behalf.</li>
+            <li>• MoreLifeOS avoids shame and never makes irreversible changes on your behalf.</li>
           </ul>
         </div>
       </AppShell>
