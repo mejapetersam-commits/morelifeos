@@ -31,4 +31,16 @@ export const auth = betterAuth({
     (origin): origin is string => Boolean(origin),
   ),
   baseURL: process.env.VERCEL_ENV === "preview" ? undefined : process.env.BETTER_AUTH_URL,
+  ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+    ? {
+        socialProviders: {
+          google: {
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            accessType: "offline",
+            prompt: "select_account consent",
+          },
+        },
+      }
+    : {}),
 });
