@@ -35,6 +35,8 @@ function GoogleCalendarPanel() {
   const [end, setEnd] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
 
   async function loadEvents() {
     setLoading(true);
@@ -82,12 +84,12 @@ function GoogleCalendarPanel() {
   }
 
   async function saveEdit(event: GoogleEvent) {
-    if (!editTitle.trim()) return;
+    if (!editTitle.trim() || !editStart || !editEnd) return;
     try {
       const response = await fetch("/api/google-calendar", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ eventId: event.id, summary: editTitle.trim() }),
+        body: JSON.stringify({ eventId: event.id, summary: editTitle.trim(), start: { dateTime: new Date(editStart).toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }, end: { dateTime: new Date(editEnd).toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone } }),
       });
       if (!response.ok) throw new Error((await response.text()) || "Could not update event.");
       setEditing(null);
@@ -147,7 +149,7 @@ function GoogleCalendarPanel() {
                   )}
                   <div className="mt-1 text-[11px] text-muted-foreground">{event.start?.dateTime ? new Date(event.start.dateTime).toLocaleString() : event.start?.date || "Time not set"}</div>
                 </div>
-                {editing !== event.id && <div className="flex items-center gap-2"><button aria-label="Edit event" onClick={() => { setEditing(event.id); setEditTitle(event.summary || ""); }} className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground"><Pencil className="h-3.5 w-3.5" /></button><button aria-label="Delete event" onClick={() => void deleteEvent(event)} className="rounded-lg p-2 text-muted-foreground hover:bg-coral/10 hover:text-coral"><Trash2 className="h-3.5 w-3.5" /></button></div>}
+                {editing !== event.id && <div className="flex items-center gap-2"><button aria-label="Edit event" onClick={() => { setEditing(event.id); setEditTitle(event.summary || ""); setEditStart(toLocalInput(event.start?.dateTime)); setEditEnd(toLocalInput(event.end?.dateTime)); }} className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground"><Pencil className="h-3.5 w-3.5" /></button><button aria-label="Delete event" onClick={() => void deleteEvent(event)} className="rounded-lg p-2 text-muted-foreground hover:bg-coral/10 hover:text-coral"><Trash2 className="h-3.5 w-3.5" /></button></div>}
               </div>
             ))}
           </div>
