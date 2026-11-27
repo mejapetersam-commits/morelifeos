@@ -51,7 +51,9 @@ function AccountStatus() {
     ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
     : syncStatus === "error"
       ? <CloudOff className="h-3.5 w-3.5 text-coral" />
-      : syncStatus === "local"\n      ? <HardDrive className="h-3.5 w-3.5 text-muted-foreground" />\n      : <Cloud className="h-3.5 w-3.5 text-sage" />;
+      : syncStatus === "local"
+      ? <HardDrive className="h-3.5 w-3.5 text-muted-foreground" />
+      : <Cloud className="h-3.5 w-3.5 text-sage" />;
 
   return (
     <div className="flex items-center justify-between gap-2 rounded-xl px-3 py-2">
