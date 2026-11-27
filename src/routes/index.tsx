@@ -181,7 +181,7 @@ function Home() {
             ) : (
               <div className="rounded-2xl bg-background/80 p-4">
                 <div className="flex items-center gap-2 text-sm font-semibold"><Sparkles className="h-4 w-4 text-ocean" /> Make progress visible</div>
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Your goals, learning and milestones will live here — connected to the actions you take every day.</p>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Your goals, learning and milestones will live here, connected to the actions you take every day.</p>
               </div>
             )}
             <div className="mt-4 flex flex-wrap items-center gap-4"><Link to="/growth" className="inline-flex items-center gap-1 text-xs font-semibold text-sage">Explore Growth <ChevronRight className="h-3 w-3" /></Link><button onClick={() => setDetail("growth")} className="text-xs font-semibold text-muted-foreground hover:text-foreground">Quick view</button></div>
