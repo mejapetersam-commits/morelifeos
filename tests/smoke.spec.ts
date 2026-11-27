@@ -37,10 +37,10 @@ for (const route of ROUTES) {
   });
 }
 
-test("75-day challenge opens its setup dialog", async ({ page }) => {
+test("consistency challenge opens its setup dialog", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: /explore challenge/i }).click();
-  await expect(page.getByRole("dialog")).toContainText("Your 75-day consistency challenge");
+  await expect(page.getByRole("dialog")).toContainText("Your Consistency Challenge");
   await expect(page.getByRole("dialog").getByRole("link", { name: /view plan/i })).toBeVisible();
 });
 
@@ -62,3 +62,27 @@ for (const width of [390, 375]) {
     expect(hasHorizontalScroll).toBe(false);
   });
 }
+
+test("Plan allows tasks and challenge settings to be edited", async ({ page }) => {
+  await page.goto("/plan");
+  await page.getByPlaceholder("Add a task…").fill("Read for 30 minutes");
+  await page.getByPlaceholder("Add a task…").press("Enter");
+  await expect(page.getByDisplayValue("Read for 30 minutes")).toBeVisible();
+  await page.getByLabel("Duration in days").fill("45");
+  await expect(page.getByLabel("Duration in days")).toHaveValue("45");
+});
+
+test("Growth allows a goal to be created and edited", async ({ page }) => {
+  await page.goto("/growth");
+  await page.getByPlaceholder("Add goals…").fill("Build a new skill");
+  await page.getByRole("button", { name: "Add to Goals" }).click();
+  await expect(page.getByDisplayValue("Build a new skill")).toBeVisible();
+  await page.getByLabel("Details for Build a new skill").fill("Complete a structured course");
+  await expect(page.getByLabel("Details for Build a new skill")).toHaveValue("Complete a structured course");
+});
+
+test("Intelligence provider can be selected", async ({ page }) => {
+  await page.goto("/intelligence");
+  await page.getByLabel("Preferred AI provider").selectOption("google");
+  await expect(page.getByText("GEMINI_API_KEY")).toBeVisible();
+});
