@@ -157,3 +157,25 @@
   .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
   ::selection { background: color-mix(in srgb, var(--sage) 24%, transparent); }
 }
+
+
+@layer components {
+  .dashboard-card {
+    transform: perspective(1200px) translateZ(0);
+    transform-style: preserve-3d;
+    transition: transform 240ms cubic-bezier(.2,.75,.25,1), box-shadow 240ms ease, border-color 240ms ease;
+  }
+  .dashboard-card:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .dashboard-card:hover {
+      transform: perspective(1200px) translateY(-3px) rotateX(.35deg);
+      box-shadow: var(--shadow-lift);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dashboard-card { transition: none; }
+  }
+}
