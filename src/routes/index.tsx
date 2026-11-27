@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AppShell } from "@/components/AppShell";
 import { SectionTitle } from "@/components/finance-cards";
 import { useFinance } from "@/lib/finance-store";
@@ -24,6 +26,8 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const { state } = useFinance();
+  const [challengeOpen, setChallengeOpen] = useState(false);
+  const [detail, setDetail] = useState<null | "day" | "execution" | "review" | "growth">(null);
   const { data: session } = useSession();
   const now = new Date();
   const firstName = session?.user?.name?.split(" ")[0];
@@ -37,6 +41,32 @@ function Home() {
 
   return (
     <AppShell>
+      <Dialog open={challengeOpen} onOpenChange={setChallengeOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto rounded-3xl border-border/70 p-6 sm:max-w-xl">
+          <DialogHeader>
+            <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-sage/10 text-sage"><Target className="h-5 w-5" /></div>
+            <DialogTitle className="font-display text-2xl">Your 75-day consistency challenge</DialogTitle>
+            <DialogDescription className="leading-relaxed">A personal system built around the routines you actually want to sustain — not a copy of 75 Hard.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="rounded-2xl border border-border/70 bg-surface p-4"><div className="text-sm font-semibold">1. Choose the commitments</div><p className="mt-1 text-xs leading-relaxed text-muted-foreground">Define a small set of daily non-negotiables, such as your workout, focused work, a walk and learning. Only commitments you explicitly choose count toward the challenge.</p></div>
+            <div className="rounded-2xl border border-border/70 bg-surface p-4"><div className="text-sm font-semibold">2. Decide the rules</div><p className="mt-1 text-xs leading-relaxed text-muted-foreground">Set the start date, completion threshold, rest-day policy and what happens after a missed day. The tracker must follow your rules, not invent them.</p></div>
+            <div className="rounded-2xl border border-border/70 bg-surface p-4"><div className="text-sm font-semibold">3. Track evidence, not intentions</div><p className="mt-1 text-xs leading-relaxed text-muted-foreground">Planned calendar events stay separate from completed actions. Your streak, day count and milestone celebrations will update only from recorded execution.</p></div>
+            <p className="px-1 text-[11px] leading-relaxed text-muted-foreground">The challenge is not active yet. We still need to lock the rules before day 1, so no progress or streak is being fabricated.</p>
+          </div>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button onClick={() => setChallengeOpen(false)} className="rounded-xl border border-border px-4 py-2.5 text-sm font-semibold transition hover:bg-accent">Close</button><Link to="/plan" onClick={() => setChallengeOpen(false)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-sage px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:-translate-y-0.5 hover:brightness-105">Set up in Plan <ArrowRight className="h-4 w-4" /></Link></div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={detail !== null} onOpenChange={(open) => { if (!open) setDetail(null); }}>
+        <DialogContent className="rounded-3xl border-border/70 p-6 sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">{detail === "day" ? "Your day, at a glance" : detail === "execution" ? "Daily execution" : detail === "review" ? "Weekly review" : "Goals & growth"}</DialogTitle>
+            <DialogDescription>{detail === "day" ? "Your calendar is the source of truth for planned time." : detail === "execution" ? "Record what happened separately from what was scheduled." : detail === "review" ? "Review the week using actual activity and reflections." : "Connect the actions you take today to the outcomes you want."}</DialogDescription>
+          </DialogHeader>
+          <div className="rounded-2xl bg-surface p-4 text-sm leading-relaxed text-muted-foreground">{detail === "day" ? "Google Calendar is selected, but authorisation is still required. Once connected, real events will appear here; this panel will not create duplicate calendar entries." : detail === "execution" ? "Execution tracking is not connected yet. The dashboard will not mark an item complete just because it was on your calendar." : detail === "review" ? (latestReview ? "Your latest saved review is available in the Reviews section." : "No weekly review has been recorded yet. Start one when you are ready to reflect on the week.") : (featuredGoal ? `Your current featured goal is ${featuredGoal.name}. Open Growth to manage its progress and milestones.` : "You have not added a goal yet. Add one in Growth to make progress visible here.")}</div>
+          <div className="flex justify-end"><button onClick={() => setDetail(null)} className="rounded-xl bg-sage px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-105">Got it</button></div>
+        </DialogContent>
+      </Dialog>
       <div className="space-y-8">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -54,10 +84,10 @@ function Home() {
         </header>
 
         <section className="grid gap-4 xl:grid-cols-[1.55fr_0.85fr]">
-          <div className="overflow-hidden rounded-[24px] border border-border/80 bg-surface-elevated shadow-soft">
+          <div className="dashboard-card overflow-hidden rounded-[24px] border border-border/80 bg-surface-elevated shadow-soft">
             <div className="flex items-center justify-between border-b border-border/60 px-5 py-4 md:px-6">
               <div>
-                <div className="flex items-center gap-2 text-sm font-semibold"><CalendarDays className="h-4 w-4 text-ocean" /> My day</div>
+                <button onClick={() => setDetail("day")} className="flex items-center gap-2 text-sm font-semibold transition hover:text-sage"><CalendarDays className="h-4 w-4 text-ocean" /> My day <span className="text-[10px] font-medium text-muted-foreground">Details</span></button>
                 <p className="mt-1 text-xs text-muted-foreground">Your schedule, in one clear timeline</p>
               </div>
               <Link to="/plan" className="text-xs font-semibold text-sage hover:opacity-75">Full calendar <ArrowUpRight className="ml-1 inline h-3 w-3" /></Link>
@@ -87,7 +117,7 @@ function Home() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            <div className="relative overflow-hidden rounded-[24px] bg-[#17233B] p-5 text-white shadow-soft md:p-6">
+            <div className="dashboard-card relative overflow-hidden rounded-[24px] bg-[#17233B] p-5 text-white shadow-soft md:p-6">
               <div className="absolute -right-8 -top-10 h-40 w-40 rounded-full border-[22px] border-white/5" />
               <div className="relative flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm font-bold tracking-tight"><Target className="h-4 w-4 text-[#A8D2BA]" /> 75-day challenge</div>
@@ -101,7 +131,7 @@ function Home() {
                 <div className="flex h-14 w-14 items-center justify-center rounded-full border-[5px] border-white/15 text-xs font-semibold text-white/70">—%</div>
               </div>
               <div className="relative mt-5 h-2 overflow-hidden rounded-full bg-white/15"><div className="h-full w-0 rounded-full bg-[#B8C5FF]" /></div>
-              <Link to="/plan" className="relative mt-5 inline-flex items-center gap-1.5 text-xs font-semibold text-[#D8DEFF] hover:text-white">Define your challenge <ArrowRight className="h-3 w-3" /></Link>
+              <button onClick={() => setChallengeOpen(true)} className="relative mt-5 inline-flex items-center gap-1.5 rounded-lg text-xs font-semibold text-[#D8DEFF] transition hover:translate-x-1 hover:text-white">Explore challenge <ArrowRight className="h-3 w-3" /></button>
             </div>
 
             <div className="rounded-[24px] border border-border/80 bg-surface-elevated p-5 shadow-soft md:p-6">
