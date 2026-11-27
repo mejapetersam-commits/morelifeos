@@ -79,7 +79,7 @@ export function OnboardingModal() {
 
         {step === 0 && (
           <div>
-            <h2 className="font-display text-2xl font-semibold">Welcome to FinanceOS</h2>
+            <h2 className="font-display text-2xl font-semibold">Welcome to MoreLifeOS</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Before numbers, purpose. A personal financial system starts with what you're building
               towards.
@@ -188,7 +188,7 @@ export function OnboardingModal() {
           <div>
             <h2 className="font-display text-2xl font-semibold">You're the decision-maker</h2>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              FinanceOS will observe, explain, and offer options — never decide for you. Your
+              MoreLifeOS will observe, explain, and offer options — never decide for you. Your
               autonomy is the point. Privacy stays local; nothing leaves this device unless you
               choose to sync later.
             </p>
@@ -211,7 +211,7 @@ export function OnboardingModal() {
                 Back
               </Button>
               <Button onClick={finish} className="bg-gold text-gold-foreground hover:bg-gold/90">
-                Enter FinanceOS
+                Enter MoreLifeOS
               </Button>
             </div>
           </div>
