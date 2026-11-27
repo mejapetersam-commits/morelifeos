@@ -144,7 +144,7 @@ function Home() {
                 <span className="pb-1 text-xs text-muted-foreground">commitments completed</span>
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-accent"><div className="h-full w-0 rounded-full bg-sage" /></div>
-              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">Execution tracking will measure what you actually complete, separately from what was planned.</p>
+              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">Execution tracking will measure what you actually complete, separately from what was planned.</p>\n              <button onClick={() => setDetail("execution")} className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold text-sage">View details <ArrowRight className="h-3 w-3" /></button>
             </div>
           </div>
         </section>
@@ -163,7 +163,7 @@ function Home() {
                 <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Your weekly review will bring together consistency, completed commitments and lessons learned once execution tracking is active.</p>
               </div>
             )}
-            <Link to="/reviews" className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-sage">Open weekly reviews <ChevronRight className="h-3 w-3" /></Link>
+            <div className="mt-4 flex flex-wrap items-center gap-4"><Link to="/reviews" className="inline-flex items-center gap-1 text-xs font-semibold text-sage">Open weekly reviews <ChevronRight className="h-3 w-3" /></Link><button onClick={() => setDetail("review")} className="text-xs font-semibold text-muted-foreground hover:text-foreground">Quick view</button></div>
           </div>
 
           <div className="rounded-[24px] border border-border/80 bg-surface-elevated p-5 shadow-soft md:p-6">
@@ -183,7 +183,7 @@ function Home() {
                 <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Your goals, learning and milestones will live here — connected to the actions you take every day.</p>
               </div>
             )}
-            <Link to="/growth" className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-sage">Explore Growth <ChevronRight className="h-3 w-3" /></Link>
+            <div className="mt-4 flex flex-wrap items-center gap-4"><Link to="/growth" className="inline-flex items-center gap-1 text-xs font-semibold text-sage">Explore Growth <ChevronRight className="h-3 w-3" /></Link><button onClick={() => setDetail("growth")} className="text-xs font-semibold text-muted-foreground hover:text-foreground">Quick view</button></div>
           </div>
         </section>
 
