@@ -136,9 +136,9 @@ function SettingsPage() {
         <section className="rounded-2xl bg-surface-elevated p-6 shadow-soft">
           <h2 className="font-display text-base font-semibold">Backup &amp; restore</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Your data lives only in this browser right now — nothing is synced to the cloud yet.
-            Download a backup regularly, especially before clearing your browser data or switching
-            devices.
+            Your data is stored in this browser and, when you're logged in, synced to your
+            account in the cloud. Download a backup periodically as an additional safeguard,
+            especially before clearing browser data or switching devices.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Button onClick={handleExport} className="gap-2">
