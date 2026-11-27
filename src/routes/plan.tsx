@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { SectionHeader } from "@/components/finance-cards";
 import { usePersonalOS, makeId, type PlanTask, type Routine } from "@/lib/personal-os-store";
-import { CalendarDays, CheckSquare, Repeat2, Timer, ShieldCheck, Plus, Trash2, ExternalLink, RefreshCw, Pencil, X, Check } from "lucide-react";
+import { CalendarDays, CheckSquare, Repeat2, Timer, ShieldCheck, Plus, Trash2, RefreshCw, Pencil, X, Check } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/plan")({ component: Plan });
