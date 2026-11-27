@@ -82,14 +82,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "MoreLifeOS — Your Personal Operating System" },
+      { title: "MoreLifeOS | Your Personal Operating System" },
       {
         name: "description",
         content:
           "A personal operating system for daily execution, financial clarity, and long-term growth.",
       },
       { name: "author", content: "More LifeOS" },
-      { property: "og:title", content: "MoreLifeOS — Your Personal Operating System" },
+      { property: "og:title", content: "MoreLifeOS | Your Personal Operating System" },
       {
         property: "og:description",
         content:
@@ -97,7 +97,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "MoreLifeOS — Your Personal Operating System" },
+      { name: "twitter:title", content: "MoreLifeOS | Your Personal Operating System" },
       {
         name: "twitter:description",
         content:
