@@ -215,7 +215,7 @@ function Home() {
 }
 
 function MiniStat({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-xl bg-background/70 px-3 py-2.5"><div className="text-[10px] text-muted-foreground">{label}</div><div className="mt-1 text-sm font-semibold">{value}</div></div>;
+  return <div className="rounded-xl bg-background/70 px-3 py-2.5"><div className="text-[10px] text-muted-foreground">{label}</div><div className="mt-1 break-words text-[11px] font-semibold leading-tight">{value}</div></div>;
 }
 function FinanceMetric({ label, value, detail }: { label: string; value: string; detail: string }) {
   return <div className="rounded-2xl border border-border/80 bg-surface-elevated p-4 transition-colors hover:border-sage/40 md:p-5"><div className="text-[10px] font-semibold uppercase tracking-[0.13em] text-muted-foreground">{label}</div><div className="mt-2 truncate font-display text-xl font-semibold tracking-tight md:text-2xl">{value}</div><div className="mt-1 text-[11px] text-muted-foreground">{detail}</div></div>;
