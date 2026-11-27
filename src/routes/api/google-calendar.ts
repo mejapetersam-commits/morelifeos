@@ -92,7 +92,7 @@ export const Route = createFileRoute("/api/google-calendar")({
           const body = await request.json() as { eventId?: string; summary?: string; description?: string; start?: { dateTime?: string; date?: string; timeZone?: string }; end?: { dateTime?: string; date?: string; timeZone?: string } };
           if (!body.eventId) return new Response("Event ID is required.", { status: 400 });
           const { eventId, ...patch } = body;
-          const token = await getAccessToken(result.userId, result.googleAccount);
+          const token = await getAccessToken(request.headers, result.googleAccount);
           const event = await googleRequest(`/calendars/primary/events/${encodeURIComponent(eventId)}`, token, { method: "PATCH", body: JSON.stringify(patch) });
           return Response.json({ event });
         } catch (error) {
@@ -108,7 +108,7 @@ export const Route = createFileRoute("/api/google-calendar")({
         const eventId = url.searchParams.get("eventId");
         try {
           if (eventId) {
-            const token = await getAccessToken(result.userId, result.googleAccount);
+            const token = await getAccessToken(request.headers, result.googleAccount);
             await googleRequest(`/calendars/primary/events/${encodeURIComponent(eventId)}`, token, { method: "DELETE" });
           } else {
             const token = await getAccessToken(request.headers, result.googleAccount);
