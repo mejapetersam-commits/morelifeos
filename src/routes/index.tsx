@@ -45,17 +45,17 @@ import type { Account } from "@/lib/finance-types";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Overview — FinanceOS | More LifeOS" },
+      { title: "Today — MoreLifeOS" },
       {
         name: "description",
         content:
-          "Your personal financial operating system. Understand your position, act on intelligent insights, and build long-term wealth with calm clarity.",
+          "Your personal operating system for daily execution, financial clarity, and long-term growth.",
       },
       { property: "og:title", content: "Overview — FinanceOS | More LifeOS" },
       {
         property: "og:description",
         content:
-          "A calm, intelligent overview of your financial life. Everything is under control.",
+          "A calm command centre for what matters today and the life you are building.",
       },
     ],
   }),
@@ -104,28 +104,54 @@ function Home() {
     <>
       <OnboardingModal />
       <AppShell>
-        {/* ─── Hero ────────────────────────────────────────────── */}
-        <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-ocean via-ocean to-[oklch(0.28_0.06_255)] p-5 text-ocean-foreground shadow-hero md:p-7">
-          <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-gold/20 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 -left-16 h-64 w-64 rounded-full bg-sage/15 blur-3xl" />
-          <div className="relative">
-            <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-ocean-foreground/60">
-              <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-              {now.toLocaleDateString(undefined, {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-              })}
-            </div>
-            <h1 className="mt-2 max-w-2xl font-display text-2xl font-semibold leading-[1.15] tracking-tight md:text-[28px]">
-              {greeting(new Date(), firstName)}.
-              <br />
-              <span className="text-ocean-foreground/80">{hero.headline}</span>
-            </h1>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-ocean-foreground/70">
-              {hero.body}
-            </p>
+        {/* ─── Today ───────────────────────────────────────────── */}
+        <section className="mb-7">
+          <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            {now.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}
           </div>
+          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight md:text-4xl">
+            {greeting(now, firstName)}.
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            A clearer view of what matters today, how you're progressing, and what needs your attention.
+          </p>
+        </section>
+
+        {/* ─── Daily structure and challenge ────────────────────── */}
+        <section className="mb-8 grid gap-4 lg:grid-cols-[1.25fr_1fr]">
+          <div className="rounded-2xl border border-border/70 bg-surface-elevated p-5">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <CalendarClock className="h-4 w-4 text-muted-foreground" />
+              Your day
+            </div>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              Your daily schedule and commitments will have a home here. Calendar connection and execution tracking are not enabled yet, so no activities are being assumed or counted.
+            </p>
+            <div className="mt-4 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <span className="h-2 w-2 rounded-full bg-amber" />
+              Daily planning integration is the next step
+            </div>
+          </div>
+          <div className="rounded-2xl border border-border/70 bg-surface-elevated p-5">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+              75-day challenge
+            </div>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              Your challenge will measure the routines you deliberately choose—not every event in your calendar. We’ll define the rules before tracking starts.
+            </p>
+            <div className="mt-4 text-xs font-medium text-muted-foreground">
+              Setup pending · No progress counted yet
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-3">
+          <SectionTitle
+            eyebrow="Financial overview"
+            title="Your money, at a glance"
+          />
+          <p className="-mt-2 mb-2 text-sm text-muted-foreground">{hero.body}</p>
         </section>
 
         {/* ─── Safe to Spend ───────────────────────────────────── */}
