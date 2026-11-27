@@ -15,9 +15,9 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Today — MoreLifeOS" },
+      { title: "Today | MoreLifeOS" },
       { name: "description", content: "Your personal command centre for daily execution, financial clarity and long-term growth." },
-      { property: "og:title", content: "Today — MoreLifeOS" },
+      { property: "og:title", content: "Today | MoreLifeOS" },
       { property: "og:description", content: "A calm command centre for what matters today and the life you are building." },
     ],
   }),
