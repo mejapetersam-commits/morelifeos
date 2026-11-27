@@ -76,7 +76,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-background text-foreground">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col border-r border-border/80 bg-surface px-4 py-7 md:flex">
         <Link to="/" className="mb-10 flex items-center gap-3 px-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#17233B] font-display text-lg font-bold text-white shadow-soft">M</div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#064E3B] font-display text-lg font-bold text-white shadow-soft">M</div>
           <div>
             <div className="font-display text-[15px] font-bold tracking-tight">MoreLifeOS</div>
             <div className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Personal operating system</div>
@@ -92,13 +92,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                 key={n.to}
                 to={n.to}
                 aria-current={active ? "page" : undefined}
-                className={`group relative flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-semibold transition-all duration-200 ${active
-                  ? "bg-[#17233B] text-white shadow-soft"
+                className={`nav-3d group relative flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-semibold transition-all duration-200 ${active
+                  ? "bg-[#064E3B] text-white shadow-soft"
                   : "text-foreground/65 hover:bg-accent hover:text-foreground"}`}
               >
-                <n.icon className={`h-[17px] w-[17px] ${active ? "text-[#A8D2BA]" : "text-muted-foreground group-hover:text-foreground"}`} />
+                <n.icon className={`h-[17px] w-[17px] ${active ? "text-[#A7F3D0]" : "text-muted-foreground group-hover:text-foreground"}`} />
                 {n.label}
-                {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#8BC5A4]" />}
+                {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#34D399]" />}
               </Link>
             );
           })}
@@ -115,7 +115,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mx-auto max-w-[1440px] px-4 pb-8 pt-5 sm:px-6 md:px-9 md:pt-9 xl:px-12">
           <div className="mb-6 flex items-center justify-between md:hidden">
             <Link to="/" className="flex items-center gap-2.5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#17233B] font-display font-bold text-white">M</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#064E3B] font-display font-bold text-white">M</span>
               <span className="font-display text-sm font-bold tracking-tight">MoreLifeOS</span>
             </Link>
             <QuickThemeToggle compact />
@@ -133,7 +133,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 key={n.to}
                 to={n.to}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-0.5 py-2 text-[9px] font-semibold transition-colors ${active ? "text-sage" : "text-muted-foreground"}`}
+                className={`nav-3d flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-0.5 py-2 text-[9px] font-semibold transition-colors ${active ? "text-sage" : "text-muted-foreground"}`}
               >
                 <span className={`flex h-8 w-10 items-center justify-center rounded-xl transition-colors ${active ? "bg-sage/10" : ""}`}>
                   <n.icon className="h-[18px] w-[18px]" />
