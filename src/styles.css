@@ -67,7 +67,7 @@
   --card-foreground: #17233B;
   --popover: #FFFFFF;
   --popover-foreground: #17233B;
-  --primary: #43866B;
+  --primary: #047857;
   --primary-foreground: #FFFFFF;
   --ocean: #17233B;
   --ocean-foreground: #FFFFFF;
@@ -79,9 +79,9 @@
   --accent-foreground: #26354B;
   --gold: #B99A61;
   --gold-foreground: #17233B;
-  --sage: #43866B;
+  --sage: #047857;
   --sage-foreground: #FFFFFF;
-  --emerald: #43866B;
+  --emerald: #047857;
   --coral: #C97870;
   --royal: #647BAA;
   --amber: #C49A56;
@@ -90,9 +90,9 @@
   --destructive-foreground: #FFFFFF;
   --border: #E4E8ED;
   --input: #E1E6EC;
-  --ring: #43866B;
+  --ring: #059669;
   --chart-1: #17233B;
-  --chart-2: #43866B;
+  --chart-2: #047857;
   --chart-3: #8879B8;
   --chart-4: #C49A56;
   --chart-5: #C97870;
@@ -108,7 +108,7 @@
   --card-foreground: #EDF2F6;
   --popover: #1B2A40;
   --popover-foreground: #EDF2F6;
-  --primary: #76B596;
+  --primary: #34D399;
   --primary-foreground: #102219;
   --ocean: #263B58;
   --ocean-foreground: #F4F7FA;
@@ -120,9 +120,9 @@
   --accent-foreground: #EDF2F6;
   --gold: #D0B27A;
   --gold-foreground: #17233B;
-  --sage: #76B596;
+  --sage: #34D399;
   --sage-foreground: #102219;
-  --emerald: #76B596;
+  --emerald: #34D399;
   --coral: #E18D83;
   --royal: #91A8D6;
   --amber: #D6B16E;
@@ -131,12 +131,12 @@
   --destructive-foreground: #201313;
   --border: #304159;
   --input: #34465D;
-  --ring: #76B596;
+  --ring: #34D399;
   --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.16), 0 6px 18px oklch(0 0 0 / 0.12);
   --shadow-lift: 0 2px 6px oklch(0 0 0 / 0.18), 0 16px 32px oklch(0 0 0 / 0.2);
   --shadow-hero: 0 1px 1px oklch(0 0 0 / 0.18), 0 26px 54px -20px oklch(0 0 0 / 0.35);
   --chart-1: #EDF2F6;
-  --chart-2: #76B596;
+  --chart-2: #34D399;
   --chart-3: #AA9BD5;
   --chart-4: #D6B16E;
   --chart-5: #E18D83;
@@ -160,7 +160,7 @@
 
 
 @layer components {
-  .dashboard-card {
+  .interactive-card {\n    transform: perspective(1100px) translateZ(0);\n    transform-style: preserve-3d;\n    transition: transform 220ms cubic-bezier(.2,.75,.25,1), box-shadow 220ms ease, border-color 220ms ease;\n  }\n  .interactive-card:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }\n  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {\n    .interactive-card:hover { transform: perspective(1100px) translateY(-3px) rotateX(.4deg); box-shadow: var(--shadow-lift); border-color: color-mix(in srgb, var(--emerald) 38%, var(--border)); }\n  }\n  .nav-3d { position: relative; transform: perspective(900px) translateZ(0); transform-style: preserve-3d; transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease; }\n  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {\n    .nav-3d:hover { transform: perspective(900px) translateY(-2px) translateZ(5px); box-shadow: 0 7px 14px color-mix(in srgb, var(--emerald) 14%, transparent); }\n    .nav-3d:active { transform: translateY(1px) scale(.985); }\n  }\n  .dashboard-card {
     transform: perspective(1200px) translateZ(0);
     transform-style: preserve-3d;
     transition: transform 240ms cubic-bezier(.2,.75,.25,1), box-shadow 240ms ease, border-color 240ms ease;
