@@ -35,7 +35,7 @@ import { Plus, Trash2, Pencil, CheckCircle2, Star, Activity, Briefcase } from "l
 export const Route = createFileRoute("/income")({
   head: () => ({
     meta: [
-      { title: "Income | FinanceOS" },
+      { title: "Income | MoreLifeOS" },
       {
         name: "description",
         content: "Track expected income and understand where your money comes from.",
