@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signIn, signUp, useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,10 +22,11 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  if (session) {
-    navigate({ to: "/" });
-    return null;
-  }
+  useEffect(() => {
+    if (session) void navigate({ to: "/" });
+  }, [session, navigate]);
+
+  if (session) return null;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +42,9 @@ function LoginPage() {
       }
       toast.success(mode === "login" ? "Welcome back" : "Account created");
       navigate({ to: "/" });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to sign in. Please try again.";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
