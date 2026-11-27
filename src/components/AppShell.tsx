@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home, Wallet, CalendarDays, Sprout, BrainCircuit, Settings,
-  Sun, Moon, LogIn, Cloud, CloudOff, Loader2, Plus,
+  Sun, Moon, LogIn, Cloud, CloudOff, HardDrive, Loader2, Plus,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTheme } from "@/lib/theme";
@@ -51,7 +51,7 @@ function AccountStatus() {
     ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
     : syncStatus === "error"
       ? <CloudOff className="h-3.5 w-3.5 text-coral" />
-      : <Cloud className="h-3.5 w-3.5 text-sage" />;
+      : syncStatus === "local"\n      ? <HardDrive className="h-3.5 w-3.5 text-muted-foreground" />\n      : <Cloud className="h-3.5 w-3.5 text-sage" />;
 
   return (
     <div className="flex items-center justify-between gap-2 rounded-xl px-3 py-2">
@@ -59,7 +59,7 @@ function AccountStatus() {
         <div className="truncate text-xs font-semibold">{session.user.email}</div>
         <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
           {syncIcon}
-          {syncStatus === "syncing" ? "Syncing…" : syncStatus === "error" ? "Sync issue" : "Data synced"}
+          {syncStatus === "syncing" ? "Syncing…" : syncStatus === "error" ? "Sync issue" : syncStatus === "local" ? "Saved locally" : "Data synced"}
         </div>
       </div>
       <button onClick={() => signOut()} className="shrink-0 text-[10px] font-medium text-muted-foreground hover:text-foreground">Log out</button>
