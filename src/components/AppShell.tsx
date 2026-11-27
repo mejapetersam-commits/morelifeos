@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  Home, Wallet, CalendarDays, Sprout, BrainCircuit, Settings,
+  Home, Wallet, CalendarDays, Sprout, Settings,
   Sun, Moon, LogIn, Cloud, CloudOff, HardDrive, Loader2, Plus,
 } from "lucide-react";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
@@ -15,7 +15,6 @@ const nav = [
   { to: "/plan", label: "Plan", icon: CalendarDays },
   { to: "/money", label: "Money", icon: Wallet },
   { to: "/growth", label: "Growth", icon: Sprout },
-  { to: "/intelligence", label: "Intelligence", icon: BrainCircuit },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
