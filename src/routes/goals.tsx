@@ -30,7 +30,7 @@ import { Plus, Trash2, Pencil, AlertTriangle, X } from "lucide-react";
 export const Route = createFileRoute("/goals")({
   head: () => ({
     meta: [
-      { title: "Goals — FinanceOS" },
+      { title: "Goals | MoreLifeOS" },
       {
         name: "description",
         content: "Define financial goals and see the monthly effort they require.",
@@ -63,7 +63,7 @@ function Goals() {
         {state.goals.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-surface p-12 text-center">
             <p className="text-sm text-muted-foreground">
-              You haven't set a goal yet. Start with something meaningful — an emergency fund, an
+              You haven't set a goal yet. Start with something meaningful, such as an emergency fund, an
               asset, or a business seed.
             </p>
           </div>
