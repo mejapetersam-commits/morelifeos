@@ -3,7 +3,7 @@ import {
   Home, Wallet, CalendarDays, Sprout, BrainCircuit, Settings,
   Sun, Moon, LogIn, Cloud, CloudOff, HardDrive, Loader2, Plus,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useTheme } from "@/lib/theme";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useFinance } from "@/lib/finance-store";
@@ -69,6 +69,86 @@ function AccountStatus() {
   );
 }
 
+
+function SlidingNav({ pathname, mobile = false }: { pathname: string; mobile?: boolean }) {
+  const navRef = useRef<HTMLElement>(null);
+  const [pill, setPill] = useState({ x: 0, y: 0, width: 0, height: 0, ready: false });
+
+  useLayoutEffect(() => {
+    const root = navRef.current;
+    if (!root) return;
+    const update = () => {
+      const active = root.querySelector<HTMLElement>('[data-nav-active="true"]');
+      if (!active) return;
+      const rootRect = root.getBoundingClientRect();
+      const rect = active.getBoundingClientRect();
+      setPill({
+        x: rect.left - rootRect.left,
+        y: rect.top - rootRect.top,
+        width: rect.width,
+        height: rect.height,
+        ready: true,
+      });
+    };
+    update();
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(update) : null;
+    observer?.observe(root);
+    window.addEventListener("resize", update);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, [pathname, mobile]);
+
+  return (
+    <nav
+      ref={navRef}
+      aria-label={mobile ? "Main navigation" : "Workspace navigation"}
+      className={mobile
+        ? "relative mx-auto flex max-w-xl items-stretch justify-around gap-0 px-1 pt-1.5"
+        : "relative flex flex-col gap-1"}
+    >
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute left-0 top-0 z-0 rounded-xl bg-[#064E3B] shadow-[0_8px_22px_rgba(4,78,59,0.24),inset_0_1px_0_rgba(255,255,255,0.22)] transition-[transform,width,height,opacity] duration-500 ease-[cubic-bezier(.2,.8,.2,1)]"
+        style={{
+          width: pill.width,
+          height: pill.height,
+          transform: `translate3d(${pill.x}px,${pill.y}px,0)`,
+          opacity: pill.ready ? 1 : 0,
+        }}
+      >
+        <span className="absolute inset-x-3 top-0 h-px rounded-full bg-white/30" />
+        <span className="absolute -right-4 -top-5 h-14 w-14 rounded-full bg-emerald-300/10 blur-xl" />
+      </span>
+      {nav.map((item) => {
+        const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+        const Icon = item.icon;
+        return (
+          <Link
+            key={item.to}
+            to={item.to}
+            data-nav-active={active ? "true" : "false"}
+            aria-current={active ? "page" : undefined}
+            className={mobile
+              ? `nav-3d relative z-10 flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-0.5 py-2 text-[9px] font-semibold transition-colors duration-300 ${active ? "text-white" : "text-muted-foreground"}`
+              : `nav-3d group relative z-10 flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-semibold transition-colors duration-300 ${active ? "text-white" : "text-foreground/65 hover:bg-accent hover:text-foreground"}`}
+          >
+            <span className={mobile
+              ? "flex h-8 w-10 items-center justify-center rounded-xl"
+              : "flex h-[17px] w-[17px] items-center justify-center"}
+            >
+              <Icon className={`${mobile ? "h-[18px] w-[18px]" : "h-[17px] w-[17px]"} ${active ? "text-[#A7F3D0]" : "text-muted-foreground group-hover:text-foreground"}`} />
+            </span>
+            <span className={mobile ? "max-w-full truncate" : ""}>{item.label}</span>
+            {!mobile && active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#34D399]" />}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
 
@@ -84,25 +164,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Link>
 
         <div className="mb-3 px-3 text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/75">Workspace</div>
-        <nav className="flex flex-col gap-1">
-          {nav.map((n) => {
-            const active = n.to === "/" ? pathname === "/" : pathname.startsWith(n.to);
-            return (
-              <Link
-                key={n.to}
-                to={n.to}
-                aria-current={active ? "page" : undefined}
-                className={`nav-3d group relative flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-semibold transition-all duration-200 ${active
-                  ? "bg-[#064E3B] text-white shadow-soft"
-                  : "text-foreground/65 hover:bg-accent hover:text-foreground"}`}
-              >
-                <n.icon className={`h-[17px] w-[17px] ${active ? "text-[#A7F3D0]" : "text-muted-foreground group-hover:text-foreground"}`} />
-                {n.label}
-                {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#34D399]" />}
-              </Link>
-            );
-          })}
-        </nav>
+        <SlidingNav pathname={pathname} />
 
         <div className="mt-auto space-y-2 border-t border-border/80 pt-5">
           <AccountStatus />
@@ -124,26 +186,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </main>
 
-      <nav aria-label="Main navigation" className="glass-panel fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-surface-elevated/80 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_28px_rgba(4,60,38,0.12)] backdrop-blur-2xl md:hidden">
-        <div className="mx-auto flex max-w-xl items-stretch justify-around px-1 pt-1.5">
-          {nav.map((n) => {
-            const active = n.to === "/" ? pathname === "/" : pathname.startsWith(n.to);
-            return (
-              <Link
-                key={n.to}
-                to={n.to}
-                aria-current={active ? "page" : undefined}
-                className={`nav-3d flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-0.5 py-2 text-[9px] font-semibold transition-colors ${active ? "text-sage" : "text-muted-foreground"}`}
-              >
-                <span className={`flex h-8 w-10 items-center justify-center rounded-xl transition-colors ${active ? "bg-sage/10" : ""}`}>
-                  <n.icon className="h-[18px] w-[18px]" />
-                </span>
-                <span className="max-w-full truncate">{n.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+      <div className="glass-panel fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-surface-elevated/80 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_28px_rgba(4,60,38,0.12)] backdrop-blur-2xl md:hidden">
+        <SlidingNav pathname={pathname} mobile />
+      </div>
 
       <QuickCaptureButton />
     </div>
