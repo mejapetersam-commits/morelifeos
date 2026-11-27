@@ -190,6 +190,6 @@
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .dashboard-card { transition: none; }
+    .interactive-card, .nav-3d, .dashboard-card { transition: none; }
   }
 }
