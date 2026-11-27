@@ -9,7 +9,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/ai")({
   head: () => ({
     meta: [
-      { title: "Decision Support — FinanceOS" },
+      { title: "Decision Support | MoreLifeOS" },
       {
         name: "description",
         content: "Explainable financial intelligence. Observe, understand, decide.",
@@ -31,7 +31,7 @@ function AiPage() {
       <AppShell>
         <SectionHeader
           title="Decision support"
-          description="Not a chatbot. A quiet assistant that observes, explains, and offers options — you decide."
+          description="Not a chatbot. A quiet assistant that observes, explains, and offers options. You decide."
         />
 
         <div className="mb-8 grid gap-4 rounded-2xl bg-ocean p-6 text-ocean-foreground shadow-soft md:grid-cols-4">
