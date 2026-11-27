@@ -28,7 +28,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { CaptureBar } from "@/components/CaptureBar";
 
 const nav = [
-  { to: "/", label: "Overview", icon: Home },
+  { to: "/", label: "Today", icon: Home },
   { to: "/money", label: "Money", icon: Wallet },
   { to: "/investments", label: "Investments", icon: PiggyBank },
   { to: "/income", label: "Income", icon: Briefcase },
