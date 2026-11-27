@@ -7,9 +7,9 @@ import { useFinance } from "@/lib/finance-store";
 import { useSession } from "@/lib/auth-client";
 import { computeMetrics, formatMoney, greeting } from "@/lib/finance-utils";
 import {
-  ArrowRight, ArrowUpRight, CalendarDays, CheckCircle2, Clock3, Wallet,
-  Target, Sparkles, Dumbbell, BookOpen, Footprints, ClipboardCheck,
-  Plus, ChevronRight, CalendarCheck, CircleDot,
+  ArrowRight, ArrowUpRight, CalendarDays, CheckCircle2, Wallet,
+  Target, Sparkles, ClipboardCheck,
+  Plus, ChevronRight, CalendarCheck,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -46,7 +46,7 @@ function Home() {
           <DialogHeader>
             <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-sage/10 text-sage"><Target className="h-5 w-5" /></div>
             <DialogTitle className="font-display text-2xl">Your 75-day consistency challenge</DialogTitle>
-            <DialogDescription className="leading-relaxed">A personal system built around the routines you actually want to sustain — not a copy of 75 Hard.</DialogDescription>
+            <DialogDescription className="leading-relaxed">A personal system built around the routines you want to sustain, not a copy of 75 Hard.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div className="rounded-2xl border border-border/70 bg-surface p-4"><div className="text-sm font-semibold">1. Choose the commitments</div><p className="mt-1 text-xs leading-relaxed text-muted-foreground">Define a small set of daily non-negotiables, such as your workout, focused work, a walk and learning. Only commitments you explicitly choose count toward the challenge.</p></div>
@@ -76,7 +76,7 @@ function Home() {
             <h1 className="mt-2 font-display text-[32px] font-bold tracking-[-0.045em] md:text-[42px]">
               {greeting(now, firstName)}<span className="text-sage">.</span>
             </h1>
-            <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-muted-foreground">A clearer view of what matters today — and where your time is going.</p>
+            <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-muted-foreground">A clearer view of what matters today and where your time is going.</p>
           </div>
           <Link to="/plan" className="inline-flex w-fit items-center gap-2 rounded-xl bg-sage px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition-all hover:-translate-y-0.5 hover:brightness-105">
             <Plus className="h-4 w-4" /> Plan my day
@@ -109,9 +109,9 @@ function Home() {
                 <Link to="/plan" className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-sage">Set up calendar connection <ArrowRight className="h-3 w-3" /></Link>
               </div>
               <div className="mt-4 grid grid-cols-3 gap-2">
-                <MiniStat label="Scheduled" value="—" />
-                <MiniStat label="Completed" value="—" />
-                <MiniStat label="Remaining" value="—" />
+                <MiniStat label="Scheduled" value="Not connected" />
+                <MiniStat label="Completed" value="Not tracked" />
+                <MiniStat label="Remaining" value="Not tracked" />
               </div>
             </div>
           </div>
@@ -125,10 +125,10 @@ function Home() {
               </div>
               <div className="relative mt-6 flex items-end justify-between">
                 <div>
-                  <div className="font-display text-4xl font-semibold">—<span className="ml-1 text-base font-medium text-white/55">/ 75 days</span></div>
+                  <div className="font-display text-2xl font-semibold">Setup pending</div>
                   <p className="mt-2 text-xs text-white/65">Your personal consistency challenge</p>
                 </div>
-                <div className="flex h-14 w-14 items-center justify-center rounded-full border-[5px] border-white/15 text-xs font-semibold text-white/70">—%</div>
+                <div className="flex h-14 w-14 items-center justify-center rounded-full border-[5px] border-white/15 text-[10px] font-semibold text-white/70">Not active</div>
               </div>
               <div className="relative mt-5 h-2 overflow-hidden rounded-full bg-white/15"><div className="h-full w-0 rounded-full bg-[#B8C5FF]" /></div>
               <button onClick={() => setChallengeOpen(true)} className="relative mt-5 inline-flex items-center gap-1.5 rounded-lg text-xs font-semibold text-[#D8DEFF] transition hover:translate-x-1 hover:text-white">Explore challenge <ArrowRight className="h-3 w-3" /></button>
@@ -140,11 +140,12 @@ function Home() {
                 <span className="text-[10px] font-medium text-muted-foreground">Today</span>
               </div>
               <div className="mt-5 flex items-end gap-2">
-                <span className="font-display text-3xl font-semibold">—</span>
+                <span className="font-display text-xl font-semibold">Not tracked</span>
                 <span className="pb-1 text-xs text-muted-foreground">commitments completed</span>
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-accent"><div className="h-full w-0 rounded-full bg-sage" /></div>
-              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">Execution tracking will measure what you actually complete, separately from what was planned.</p>\n              <button onClick={() => setDetail("execution")} className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold text-sage">View details <ArrowRight className="h-3 w-3" /></button>
+              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">Execution tracking will measure what you actually complete, separately from what was planned.</p>
+<button onClick={() => setDetail("execution")} className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold text-sage">View details <ArrowRight className="h-3 w-3" /></button>
             </div>
           </div>
         </section>
