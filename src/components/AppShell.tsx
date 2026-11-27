@@ -2,9 +2,9 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home,
   Wallet,
-  Target,
-  NotebookPen,
-  Sparkles,
+  CalendarDays,
+  Sprout,
+  BrainCircuit,
   Settings,
   Sun,
   Moon,
@@ -12,9 +12,6 @@ import {
   Cloud,
   CloudOff,
   Loader2,
-  PiggyBank,
-  Briefcase,
-  Inbox as InboxIcon,
   Plus,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -26,13 +23,10 @@ import { CaptureBar } from "@/components/CaptureBar";
 
 const nav = [
   { to: "/", label: "Today", icon: Home },
+  { to: "/plan", label: "Plan", icon: CalendarDays },
   { to: "/money", label: "Money", icon: Wallet },
-  { to: "/investments", label: "Investments", icon: PiggyBank },
-  { to: "/income", label: "Income", icon: Briefcase },
-  { to: "/inbox", label: "Inbox", icon: InboxIcon },
-  { to: "/goals", label: "Goals", icon: Target },
-  { to: "/reviews", label: "Reviews", icon: NotebookPen },
-  { to: "/ai", label: "Intelligence", icon: Sparkles },
+  { to: "/growth", label: "Growth", icon: Sprout },
+  { to: "/intelligence", label: "Intelligence", icon: BrainCircuit },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
