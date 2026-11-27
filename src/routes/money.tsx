@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useId, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { SectionHeader } from "@/components/finance-cards";
@@ -128,6 +128,10 @@ function Money() {
           title="Money"
           description="Where your money lives and how it moves. Structure builds understanding."
         />
+        <div className="mb-6 flex flex-wrap gap-2">
+          <Link to="/investments" className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground/75 transition-colors hover:border-ocean/50 hover:text-ocean">Investments</Link>
+          <Link to="/income" className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground/75 transition-colors hover:border-ocean/50 hover:text-ocean">Income sources</Link>
+        </div>
 
         <Tabs defaultValue="accounts">
           <TabsList>
