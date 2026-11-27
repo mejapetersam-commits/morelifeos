@@ -15,10 +15,10 @@ import { Plus, Trash2, HelpCircle, ThumbsUp, Minus, ThumbsDown } from "lucide-re
 export const Route = createFileRoute("/reviews")({
   head: () => ({
     meta: [
-      { title: "Weekly Review — FinanceOS" },
+      { title: "Weekly Review | MoreLifeOS" },
       {
         name: "description",
-        content: "Reflect weekly, with real data — and revisit decisions later.",
+        content: "Reflect weekly with real data and revisit decisions later.",
       },
     ],
   }),
