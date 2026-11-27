@@ -82,11 +82,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "FinanceOS — Your Personal Financial Command Center" },
+      { title: "MoreLifeOS — Your Personal Operating System" },
       {
         name: "description",
         content:
-          "A personal financial operating system that helps you understand, decide, and build long-term wealth with clarity.",
+          "A personal operating system for daily execution, financial clarity, and long-term growth.",
       },
       { name: "author", content: "More LifeOS" },
       { property: "og:title", content: "FinanceOS — Your Personal Financial Command Center" },
