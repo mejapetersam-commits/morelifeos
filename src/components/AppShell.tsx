@@ -73,8 +73,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col border-r border-border/80 bg-surface px-4 py-7 md:flex">
+    <div className="app-backdrop min-h-screen bg-background/70 text-foreground">
+      <aside className="glass-panel fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col border-r border-border/80 bg-surface/70 px-4 py-7 md:flex">
         <Link to="/" className="mb-10 flex items-center gap-3 px-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#064E3B] font-display text-lg font-bold text-white shadow-soft">M</div>
           <div>
@@ -124,7 +124,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </main>
 
-      <nav aria-label="Main navigation" className="fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-surface-elevated/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_28px_rgba(20,35,55,0.06)] backdrop-blur-xl md:hidden">
+      <nav aria-label="Main navigation" className="glass-panel fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-surface-elevated/80 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_28px_rgba(4,60,38,0.12)] backdrop-blur-2xl md:hidden">
         <div className="mx-auto flex max-w-xl items-stretch justify-around px-1 pt-1.5">
           {nav.map((n) => {
             const active = n.to === "/" ? pathname === "/" : pathname.startsWith(n.to);
