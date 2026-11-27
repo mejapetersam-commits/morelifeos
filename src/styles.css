@@ -91,11 +91,11 @@
   --border: #E4E8ED;
   --input: #E1E6EC;
   --ring: #059669;
-  --chart-1: #17233B;
-  --chart-2: #047857;
-  --chart-3: #8879B8;
-  --chart-4: #C49A56;
-  --chart-5: #C97870;
+  --chart-1: #064E3B;
+  --chart-2: #0F766E;
+  --chart-3: #34A879;
+  --chart-4: #A7DCC0;
+  --chart-5: #E2F2E9;
 }
 
 .dark {
@@ -135,11 +135,11 @@
   --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.16), 0 6px 18px oklch(0 0 0 / 0.12);
   --shadow-lift: 0 2px 6px oklch(0 0 0 / 0.18), 0 16px 32px oklch(0 0 0 / 0.2);
   --shadow-hero: 0 1px 1px oklch(0 0 0 / 0.18), 0 26px 54px -20px oklch(0 0 0 / 0.35);
-  --chart-1: #EDF2F6;
-  --chart-2: #34D399;
-  --chart-3: #AA9BD5;
-  --chart-4: #D6B16E;
-  --chart-5: #E18D83;
+  --chart-1: #DDF7E8;
+  --chart-2: #6EE7B7;
+  --chart-3: #34D399;
+  --chart-4: #0F766E;
+  --chart-5: #A7F3D0;
 }
 
 @layer base {
@@ -345,4 +345,23 @@
     pointer-events: none;
     background: linear-gradient(118deg, rgb(255 255 255 / 10%), transparent 42%, rgb(167 243 208 / 7%));
   }
+}
+
+
+/* One brand emerald across primary actions, active navigation and accents. */
+:root {
+  --primary: #064E3B;
+  --primary-foreground: #FFFFFF;
+  --sage: #064E3B;
+  --sage-foreground: #FFFFFF;
+  --emerald: #064E3B;
+  --ring: #0F766E;
+}
+.dark {
+  --primary: #34D399;
+  --primary-foreground: #06281D;
+  --sage: #34D399;
+  --sage-foreground: #06281D;
+  --emerald: #34D399;
+  --ring: #6EE7B7;
 }

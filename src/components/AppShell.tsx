@@ -109,7 +109,7 @@ function SlidingNav({ pathname, mobile = false }: { pathname: string; mobile?: b
     >
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute left-0 top-0 z-0 rounded-xl bg-[#064E3B] shadow-[0_8px_22px_rgba(4,78,59,0.24),inset_0_1px_0_rgba(255,255,255,0.22)] transition-[transform,width,height,opacity] duration-500 ease-[cubic-bezier(.2,.8,.2,1)]"
+        className="pointer-events-none absolute left-0 top-0 z-0 rounded-xl bg-primary shadow-[0_8px_22px_rgba(4,78,59,0.24),inset_0_1px_0_rgba(255,255,255,0.22)] transition-[transform,width,height,opacity] duration-500 ease-[cubic-bezier(.2,.8,.2,1)]"
         style={{
           width: pill.width,
           height: pill.height,
@@ -137,10 +137,10 @@ function SlidingNav({ pathname, mobile = false }: { pathname: string; mobile?: b
               ? "flex h-8 w-10 items-center justify-center rounded-xl"
               : "flex h-[17px] w-[17px] items-center justify-center"}
             >
-              <Icon className={`${mobile ? "h-[18px] w-[18px]" : "h-[17px] w-[17px]"} ${active ? "text-[#A7F3D0]" : "text-muted-foreground group-hover:text-foreground"}`} />
+              <Icon className={`${mobile ? "h-[18px] w-[18px]" : "h-[17px] w-[17px]"} ${active ? "text-emerald-100" : "text-muted-foreground group-hover:text-foreground"}`} />
             </span>
             <span className={mobile ? "max-w-full truncate" : ""}>{item.label}</span>
-            {!mobile && active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#34D399]" />}
+            {!mobile && active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-300" />}
           </Link>
         );
       })}
@@ -155,7 +155,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="app-backdrop min-h-screen bg-background/70 text-foreground">
       <aside className="glass-panel fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col border-r border-border/80 bg-surface/70 px-4 py-7 md:flex">
         <Link to="/" className="mb-10 flex items-center gap-3 px-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#064E3B] font-display text-lg font-bold text-white shadow-soft">M</div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-primary font-display text-lg font-bold text-white shadow-soft">M</div>
           <div>
             <div className="font-display text-[15px] font-bold tracking-tight">MoreLifeOS</div>
             <div className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Personal operating system</div>
