@@ -2,7 +2,11 @@ import { test, expect } from "@playwright/test";
 
 const ROUTES = [
   "/",
+  "/plan",
   "/money",
+  "/growth",
+  "/intelligence",
+  "/login",
   "/investments",
   "/income",
   "/inbox",
