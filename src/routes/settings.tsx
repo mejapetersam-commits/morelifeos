@@ -209,7 +209,7 @@ function GoogleServicesSection() {
     try {
       const result = await authClient.linkSocial({
         provider: "google",
-        scopes: ["https://www.googleapis.com/auth/calendar.events"],
+        scopes: ["https://www.googleapis.com/auth/calendar.events.owned"],
         callbackURL: "/settings?google=connected",
         errorCallbackURL: "/settings?google=error",
       });
