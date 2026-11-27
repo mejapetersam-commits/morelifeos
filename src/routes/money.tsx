@@ -548,13 +548,10 @@ function AddAccountDialog({
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType>("bank");
-  const [balance, setBalance] = useState("");
-
   const submit = () => {
     if (!name.trim()) return;
-    onAdd({ name: name.trim(), type, balance: Number(balance) || 0, currency: defaultCurrency });
+    onAdd({ name: name.trim(), type, balance: 0, currency: defaultCurrency });
     setName("");
-    setBalance("");
     setType("bank");
     setOpen(false);
   };
@@ -593,15 +590,6 @@ function AddAccountDialog({
                 <SelectItem value="investment">Investment</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="add-acct-balance">Starting balance</Label>
-            <Input
-              id="add-acct-balance"
-              inputMode="numeric"
-              value={balance}
-              onChange={(e) => setBalance(e.target.value)}
-            />
           </div>
           <Button
             onClick={submit}
