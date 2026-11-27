@@ -32,7 +32,6 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-ring-offset-background: var(--background);
   --color-gold: var(--gold);
   --color-gold-foreground: var(--gold-foreground);
   --color-sage: var(--sage);
@@ -46,9 +45,9 @@
   --color-royal: var(--royal);
   --color-amber: var(--amber);
   --color-indigo: var(--indigo);
-  --shadow-soft: 0 1px 2px oklch(0.2 0.05 250 / 0.04), 0 8px 24px oklch(0.2 0.05 250 / 0.06);
-  --shadow-lift: 0 2px 6px oklch(0.2 0.05 250 / 0.05), 0 20px 40px oklch(0.2 0.05 250 / 0.08);
-  --shadow-hero: 0 1px 1px oklch(0.2 0.05 250 / 0.03), 0 30px 60px -20px oklch(0.22 0.06 255 / 0.14);
+  --shadow-soft: 0 1px 2px oklch(0.2 0.04 255 / 0.025), 0 5px 16px oklch(0.2 0.04 255 / 0.035);
+  --shadow-lift: 0 2px 5px oklch(0.2 0.04 255 / 0.04), 0 14px 30px oklch(0.2 0.04 255 / 0.07);
+  --shadow-hero: 0 1px 1px oklch(0.2 0.04 255 / 0.025), 0 24px 50px -20px oklch(0.22 0.05 255 / 0.12);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -57,112 +56,104 @@
 }
 
 :root {
-  --radius: 0.875rem;
-  /* Warm Ivory base */
-  --background: oklch(0.98 0.008 90);
-  --surface: oklch(0.985 0.006 90);
-  --surface-elevated: oklch(1 0 0);
-  --foreground: oklch(0.22 0.04 250);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.04 250);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.04 250);
-  /* Deep Ocean Blue #0B1F3A */
-  --primary: oklch(0.22 0.05 255);
-  --primary-foreground: oklch(0.98 0.008 90);
-  --ocean: oklch(0.22 0.05 255);
-  --ocean-foreground: oklch(0.98 0.008 90);
-  --secondary: oklch(0.95 0.01 90);
-  --secondary-foreground: oklch(0.22 0.05 255);
-  --muted: oklch(0.955 0.008 90);
-  --muted-foreground: oklch(0.5 0.02 255);
-  --accent: oklch(0.95 0.02 90);
-  --accent-foreground: oklch(0.22 0.05 255);
-  /* Warm Gold #C9A227 */
-  --gold: oklch(0.74 0.13 85);
-  --gold-foreground: oklch(0.22 0.05 255);
-  /* Sage Green #7FAE8A — savings */
-  --sage: oklch(0.73 0.07 150);
-  --sage-foreground: oklch(0.22 0.05 255);
-  /* Emerald — investments */
-  --emerald: oklch(0.62 0.13 155);
-  /* Muted Coral — expenses */
-  --coral: oklch(0.7 0.11 30);
-  /* Royal Blue — goals */
-  --royal: oklch(0.5 0.15 260);
-  /* Amber — debt */
-  --amber: oklch(0.78 0.14 70);
-  /* Indigo — financial intelligence */
-  --indigo: oklch(0.5 0.14 285);
-  --destructive: oklch(0.6 0.2 25);
-  --destructive-foreground: oklch(0.98 0.008 90);
-  --border: oklch(0.9 0.01 90);
-  --input: oklch(0.92 0.01 90);
-  --ring: oklch(0.74 0.13 85);
-  --chart-1: oklch(0.22 0.05 255);
-  --chart-2: oklch(0.74 0.13 85);
-  --chart-3: oklch(0.73 0.07 150);
-  --chart-4: oklch(0.5 0.15 260);
-  --chart-5: oklch(0.7 0.11 30);
+  color-scheme: light;
+  --radius: 0.9rem;
+  /* Cool, quiet surfaces */
+  --background: #F5F6F8;
+  --surface: #F8F9FB;
+  --surface-elevated: #FFFFFF;
+  --foreground: #17233B;
+  --card: #FFFFFF;
+  --card-foreground: #17233B;
+  --popover: #FFFFFF;
+  --popover-foreground: #17233B;
+  --primary: #43866B;
+  --primary-foreground: #FFFFFF;
+  --ocean: #17233B;
+  --ocean-foreground: #FFFFFF;
+  --secondary: #EDF1F4;
+  --secondary-foreground: #26354B;
+  --muted: #EEF1F4;
+  --muted-foreground: #778292;
+  --accent: #E8EDF2;
+  --accent-foreground: #26354B;
+  --gold: #B99A61;
+  --gold-foreground: #17233B;
+  --sage: #43866B;
+  --sage-foreground: #FFFFFF;
+  --emerald: #43866B;
+  --coral: #C97870;
+  --royal: #647BAA;
+  --amber: #C49A56;
+  --indigo: #8879B8;
+  --destructive: #C45F5F;
+  --destructive-foreground: #FFFFFF;
+  --border: #E4E8ED;
+  --input: #E1E6EC;
+  --ring: #43866B;
+  --chart-1: #17233B;
+  --chart-2: #43866B;
+  --chart-3: #8879B8;
+  --chart-4: #C49A56;
+  --chart-5: #C97870;
 }
 
 .dark {
-  /* Rich deep navy base — chroma carried through every layer so it reads
-     as "ocean at night", not desaturated charcoal (fixing the earlier
-     gloomy attempt). Every accent below is brightened vs. its light-mode
-     value so it still pops against the dark surface. */
-  --background: oklch(0.15 0.045 260);
-  --surface: oklch(0.185 0.045 260);
-  --surface-elevated: oklch(0.235 0.045 258);
-  --foreground: oklch(0.96 0.012 90);
-  --card: oklch(0.22 0.045 258);
-  --card-foreground: oklch(0.96 0.012 90);
-  --popover: oklch(0.22 0.045 258);
-  --popover-foreground: oklch(0.96 0.012 90);
-  /* Gold becomes the primary action color against dark navy */
-  --primary: oklch(0.8 0.15 85);
-  --primary-foreground: oklch(0.18 0.04 258);
-  --ocean: oklch(0.34 0.08 258);
-  --ocean-foreground: oklch(0.96 0.012 90);
-  --secondary: oklch(0.27 0.04 258);
-  --secondary-foreground: oklch(0.96 0.012 90);
-  --muted: oklch(0.25 0.035 258);
-  --muted-foreground: oklch(0.72 0.025 250);
-  --accent: oklch(0.3 0.045 258);
-  --accent-foreground: oklch(0.96 0.012 90);
-  --gold: oklch(0.8 0.15 85);
-  --gold-foreground: oklch(0.18 0.04 258);
-  --sage: oklch(0.72 0.1 150);
-  --sage-foreground: oklch(0.15 0.03 150);
-  --emerald: oklch(0.72 0.14 155);
-  --coral: oklch(0.74 0.13 30);
-  --royal: oklch(0.68 0.16 260);
-  --amber: oklch(0.8 0.15 70);
-  --indigo: oklch(0.68 0.15 285);
-  --destructive: oklch(0.68 0.19 25);
-  --destructive-foreground: oklch(0.98 0.008 90);
-  --border: oklch(0.33 0.04 258);
-  --input: oklch(0.3 0.04 258);
-  --ring: oklch(0.8 0.15 85);
-  --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.3), 0 8px 24px oklch(0 0 0 / 0.35);
-  --shadow-lift: 0 2px 6px oklch(0 0 0 / 0.3), 0 20px 40px oklch(0 0 0 / 0.4);
-  --shadow-hero: 0 1px 1px oklch(0 0 0 / 0.2), 0 30px 60px -20px oklch(0 0 0 / 0.5);
-  --chart-1: oklch(0.8 0.15 85);
-  --chart-2: oklch(0.72 0.1 150);
-  --chart-3: oklch(0.68 0.16 260);
-  --chart-4: oklch(0.74 0.13 30);
-  --chart-5: oklch(0.68 0.15 285);
+  color-scheme: dark;
+  --background: #111A29;
+  --surface: #162235;
+  --surface-elevated: #1B2A40;
+  --foreground: #EDF2F6;
+  --card: #1B2A40;
+  --card-foreground: #EDF2F6;
+  --popover: #1B2A40;
+  --popover-foreground: #EDF2F6;
+  --primary: #76B596;
+  --primary-foreground: #102219;
+  --ocean: #263B58;
+  --ocean-foreground: #F4F7FA;
+  --secondary: #26364B;
+  --secondary-foreground: #EDF2F6;
+  --muted: #223249;
+  --muted-foreground: #A1ADBC;
+  --accent: #2B3D54;
+  --accent-foreground: #EDF2F6;
+  --gold: #D0B27A;
+  --gold-foreground: #17233B;
+  --sage: #76B596;
+  --sage-foreground: #102219;
+  --emerald: #76B596;
+  --coral: #E18D83;
+  --royal: #91A8D6;
+  --amber: #D6B16E;
+  --indigo: #AA9BD5;
+  --destructive: #E17D7D;
+  --destructive-foreground: #201313;
+  --border: #304159;
+  --input: #34465D;
+  --ring: #76B596;
+  --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.16), 0 6px 18px oklch(0 0 0 / 0.12);
+  --shadow-lift: 0 2px 6px oklch(0 0 0 / 0.18), 0 16px 32px oklch(0 0 0 / 0.2);
+  --shadow-hero: 0 1px 1px oklch(0 0 0 / 0.18), 0 26px 54px -20px oklch(0 0 0 / 0.35);
+  --chart-1: #EDF2F6;
+  --chart-2: #76B596;
+  --chart-3: #AA9BD5;
+  --chart-4: #D6B16E;
+  --chart-5: #E18D83;
 }
 
 @layer base {
   * { border-color: var(--color-border); }
   html, body {
+    min-height: 100%;
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     font-feature-settings: "cv11", "ss01";
   }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
+  body { text-rendering: optimizeLegibility; }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.035em; }
   .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+  ::selection { background: color-mix(in srgb, var(--sage) 24%, transparent); }
 }
