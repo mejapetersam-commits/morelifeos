@@ -73,7 +73,7 @@ function Reviews() {
       <AppShell>
         <SectionHeader
           title="Weekly review"
-          description="This is not judgment. It's practice — a short pause to notice, learn, and choose."
+          description="This is not judgment. It's practice. A short pause to notice, learn, and choose."
         />
 
         {dueDecisions.length > 0 && (
@@ -133,7 +133,7 @@ function Reviews() {
             Decision log
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Log a real decision — not just a transaction — and FinanceOS will ask you in about 3
+            Log a real decision, not just a transaction, and MoreLifeOS will ask you in about 3
             months whether it turned out to be the right call.
           </p>
           <AddDecisionForm
