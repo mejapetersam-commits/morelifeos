@@ -65,7 +65,7 @@ export function CaptureBar({
             submit();
           }
         }}
-        placeholder="Type anything — an expense, an idea, a reminder…"
+        placeholder="Type anything, such as an expense, idea or reminder…"
         rows={compact ? 3 : 2}
         autoFocus={compact}
       />
