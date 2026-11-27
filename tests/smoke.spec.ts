@@ -37,11 +37,28 @@ for (const route of ROUTES) {
   });
 }
 
-test("mobile viewport has no horizontal scroll on dashboard", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+test("75-day challenge opens its setup dialog", async ({ page }) => {
   await page.goto("/");
-  const hasHorizontalScroll = await page.evaluate(
-    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-  );
-  expect(hasHorizontalScroll).toBe(false);
+  await page.getByRole("button", { name: /explore challenge/i }).click();
+  await expect(page.getByRole("dialog")).toContainText("Your 75-day consistency challenge");
+  await expect(page.getByRole("dialog").getByRole("link", { name: /set up in plan/i })).toBeVisible();
 });
+
+test("dashboard detail panels open and close", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: /my day details/i }).click();
+  await expect(page.getByRole("dialog")).toContainText("Your day, at a glance");
+  await page.getByRole("button", { name: /got it/i }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+for (const width of [390, 375]) {
+  test(`mobile viewport ${width}px has no horizontal scroll`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/");
+    const hasHorizontalScroll = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    );
+    expect(hasHorizontalScroll).toBe(false);
+  });
+}
