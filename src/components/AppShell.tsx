@@ -20,6 +20,7 @@ import {
 import { useState, type ReactNode } from "react";
 import { useTheme } from "@/lib/theme";
 import { useSession, signOut } from "@/lib/auth-client";
+import { useFinance } from "@/lib/finance-store";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CaptureBar } from "@/components/CaptureBar";
 
