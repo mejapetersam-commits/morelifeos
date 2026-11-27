@@ -41,7 +41,7 @@ test("75-day challenge opens its setup dialog", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: /explore challenge/i }).click();
   await expect(page.getByRole("dialog")).toContainText("Your 75-day consistency challenge");
-  await expect(page.getByRole("dialog").getByRole("link", { name: /set up in plan/i })).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("link", { name: /view plan/i })).toBeVisible();
 });
 
 test("dashboard detail panels open and close", async ({ page }) => {
