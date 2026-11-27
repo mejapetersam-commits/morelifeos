@@ -81,11 +81,11 @@ export function OnboardingModal() {
           <div>
             <h2 className="font-display text-2xl font-semibold">Welcome to MoreLifeOS</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Before numbers, purpose. A personal financial system starts with what you're building
+              Before numbers, purpose. A personal operating system starts with what you're building
               towards.
             </p>
             <div className="mt-6 space-y-2">
-              <p className="text-sm font-medium">What financial areas matter most right now?</p>
+              <p className="text-sm font-medium">What areas matter most in your life right now?</p>
               <div className="flex flex-wrap gap-2">
                 {visionOptions.map((v) => (
                   <button
@@ -195,15 +195,15 @@ export function OnboardingModal() {
             <ul className="mt-6 space-y-3 text-sm">
               <li className="flex gap-3">
                 <span className="mt-1 h-2 w-2 rounded-full bg-gold" />
-                Track money movement across accounts and categories.
+                Plan your days and follow through on meaningful commitments.
               </li>
               <li className="flex gap-3">
                 <span className="mt-1 h-2 w-2 rounded-full bg-sage" />
-                Define goals and see the monthly effort they require.
+                Manage your money, goals and long-term development in one place.
               </li>
               <li className="flex gap-3">
                 <span className="mt-1 h-2 w-2 rounded-full bg-ocean" />
-                Reflect weekly — because learning compounds like wealth.
+                Review your progress and make better decisions with real information.
               </li>
             </ul>
             <div className="mt-8 flex justify-between">
