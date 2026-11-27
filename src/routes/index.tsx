@@ -13,10 +13,7 @@ import {
   Wallet,
   Target,
   Sparkles,
-  Dumbbell,
-  BookOpen,
-  Footprints,
-  ClipboardCheck,
+   ClipboardCheck,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
