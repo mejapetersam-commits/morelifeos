@@ -26,7 +26,7 @@ import type { FinanceState } from "@/lib/finance-types";
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: "Settings — FinanceOS" },
+      { title: "Settings | MoreLifeOS" },
       { name: "description", content: "Appearance and data backup." },
     ],
   }),
@@ -83,7 +83,7 @@ function SettingsPage() {
         }
         setPendingImport(parsed);
       } catch {
-        toast.error("Couldn't read that file — is it valid JSON?");
+        toast.error("Couldn't read that file. Is it valid JSON?");
       }
     };
     reader.readAsText(file);
