@@ -5,8 +5,6 @@ import {
   Target,
   NotebookPen,
   Sparkles,
-  CheckCircle2,
-  Circle,
   Settings,
   Sun,
   Moon,
@@ -20,8 +18,6 @@ import {
   Plus,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { useFinance } from "@/lib/finance-store";
-import { computeMetrics } from "@/lib/finance-utils";
 import { useTheme } from "@/lib/theme";
 import { useSession, signOut } from "@/lib/auth-client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -100,27 +96,7 @@ function AccountStatus() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const { state } = useFinance();
-  const m = computeMetrics(state);
 
-  const focus = [
-    {
-      done: state.reviews.some((r) => {
-        const d = new Date(r.createdAt);
-        const diff = (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24);
-        return diff < 7;
-      }),
-      text: "Review this week",
-    },
-    {
-      done: state.goals.length > 0,
-      text: state.goals.length > 0 ? "Goal defined" : "Define a goal",
-    },
-    {
-      done: m.monthIncome > m.monthExpenses && m.monthIncome > 0,
-      text: m.monthIncome > 0 ? "Positive cash flow" : "Log this month's income",
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -133,7 +109,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div>
             <div className="font-display text-[15px] font-semibold leading-tight">More LifeOS</div>
             <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-              FinanceOS
+              Personal OS
             </div>
           </div>
         </Link>
@@ -160,30 +136,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
 
-        <div className="mt-8 rounded-2xl border border-border/60 bg-surface-elevated p-4 shadow-soft">
-          <div className="mb-3 flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-            <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-              Today's Focus
-            </div>
-          </div>
-          <ul className="space-y-2.5">
-            {focus.map((f, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-[13px] leading-snug">
-                {f.done ? (
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
-                ) : (
-                  <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/60" />
-                )}
-                <span
-                  className={f.done ? "text-muted-foreground line-through" : "text-foreground/80"}
-                >
-                  {f.text}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+
 
         <div className="mt-auto flex flex-col gap-1 px-2 pt-6">
           <AccountStatus />
