@@ -16,33 +16,18 @@ async function getGoogleAccount(request: Request) {
   return { userId: session.user.id, googleAccount } as const;
 }
 
-async function getAccessToken(userId: string, googleAccount: typeof account.$inferSelect) {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  if (!clientId || !clientSecret) throw new Error("Google OAuth is not configured.");
-  if (googleAccount.accessToken && googleAccount.accessTokenExpiresAt &&
-      googleAccount.accessTokenExpiresAt.getTime() > Date.now() + 60_000) {
-    return googleAccount.accessToken;
-  }
-  if (!googleAccount.refreshToken) throw new Error("Google access expired. Reconnect your account.");
-  const response = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      client_id: clientId,
-      client_secret: clientSecret,
-      refresh_token: googleAccount.refreshToken,
-      grant_type: "refresh_token",
-    }),
+async function getAccessToken(headers: Headers, googleAccount: typeof account.$inferSelect) {
+  const result = await auth.api.getAccessToken({
+    body: { accountId: googleAccount.id },
+    headers,
   });
-  const tokens = await response.json() as { access_token?: string; expires_in?: number; error?: string };
-  if (!response.ok || !tokens.access_token) throw new Error(tokens.error || "Google token refresh failed.");
-  await db().update(account).set({
-    accessToken: tokens.access_token,
-    accessTokenExpiresAt: new Date(Date.now() + (tokens.expires_in ?? 3600) * 1000),
-    updatedAt: new Date(),
-  }).where(and(eq(account.id, googleAccount.id), eq(account.userId, userId)));
-  return tokens.access_token;
+  if (!result?.accessToken) throw new Error("Google access expired. Reconnect your account.");
+  return result.accessToken;
+}
+
+function isSameOrigin(request: Request) {
+  const origin = request.headers.get("origin");
+  return !origin || new URL(origin).origin === new URL(request.url).origin;
 }
 
 async function googleRequest(path: string, token: string, init?: RequestInit) {
@@ -71,7 +56,7 @@ export const Route = createFileRoute("/api/google-calendar")({
         if (!result.googleAccount) return Response.json({ configured: true, connected: false });
         const url = new URL(request.url);
         try {
-          const token = await getAccessToken(result.userId, result.googleAccount);
+          const token = await getAccessToken(request.headers, result.googleAccount);
           const timeMin = url.searchParams.get("timeMin") || new Date().toISOString();
           const timeMax = url.searchParams.get("timeMax") || new Date(Date.now() + 7 * 86400000).toISOString();
           const events = await googleRequest(
@@ -84,6 +69,7 @@ export const Route = createFileRoute("/api/google-calendar")({
         }
       },
       POST: async ({ request }) => {
+        if (!isSameOrigin(request)) return new Response("Forbidden", { status: 403 });
         const result = await getGoogleAccount(request);
         if ("response" in result) return result.response;
         if (!result.googleAccount) return new Response("Google Calendar is not connected.", { status: 409 });
@@ -98,6 +84,7 @@ export const Route = createFileRoute("/api/google-calendar")({
         }
       },
       PATCH: async ({ request }) => {
+        if (!isSameOrigin(request)) return new Response("Forbidden", { status: 403 });
         const result = await getGoogleAccount(request);
         if ("response" in result) return result.response;
         if (!result.googleAccount) return new Response("Google Calendar is not connected.", { status: 409 });
@@ -113,6 +100,7 @@ export const Route = createFileRoute("/api/google-calendar")({
         }
       },
       DELETE: async ({ request }) => {
+        if (!isSameOrigin(request)) return new Response("Forbidden", { status: 403 });
         const result = await getGoogleAccount(request);
         if ("response" in result) return result.response;
         if (!result.googleAccount) return Response.json({ ok: true });
@@ -123,10 +111,8 @@ export const Route = createFileRoute("/api/google-calendar")({
             const token = await getAccessToken(result.userId, result.googleAccount);
             await googleRequest(`/calendars/primary/events/${encodeURIComponent(eventId)}`, token, { method: "DELETE" });
           } else {
-            const token = result.googleAccount.refreshToken || result.googleAccount.accessToken;
-            if (token) {
-              await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(token)}`, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" } });
-            }
+            const token = await getAccessToken(request.headers, result.googleAccount);
+            await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(token)}`, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" } });
             await db().delete(account).where(and(eq(account.id, result.googleAccount.id), eq(account.userId, result.userId)));
           }
           return Response.json({ ok: true });
