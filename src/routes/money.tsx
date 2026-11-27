@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useId, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { SectionHeader } from "@/components/finance-cards";
@@ -40,7 +40,7 @@ import { Trash2, Plus, Pencil, Search, Repeat, AlertCircle } from "lucide-react"
 export const Route = createFileRoute("/money")({
   head: () => ({
     meta: [
-      { title: "Money — Accounts & Transactions | FinanceOS" },
+      { title: "Money | MoreLifeOS" },
       {
         name: "description",
         content: "Track your accounts and money movement with clarity.",
@@ -128,6 +128,10 @@ function Money() {
           title="Money"
           description="Where your money lives and how it moves. Structure builds understanding."
         />
+        <div className="mb-6 flex flex-wrap gap-2">
+          <Link to="/investments" className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground/75 transition-colors hover:border-ocean/50 hover:text-ocean">Investments</Link>
+          <Link to="/income" className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground/75 transition-colors hover:border-ocean/50 hover:text-ocean">Income sources</Link>
+        </div>
 
         <Tabs defaultValue="accounts">
           <TabsList>
@@ -544,13 +548,10 @@ function AddAccountDialog({
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType>("bank");
-  const [balance, setBalance] = useState("");
-
   const submit = () => {
     if (!name.trim()) return;
-    onAdd({ name: name.trim(), type, balance: Number(balance) || 0, currency: defaultCurrency });
+    onAdd({ name: name.trim(), type, balance: 0, currency: defaultCurrency });
     setName("");
-    setBalance("");
     setType("bank");
     setOpen(false);
   };
@@ -589,15 +590,6 @@ function AddAccountDialog({
                 <SelectItem value="investment">Investment</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="add-acct-balance">Starting balance</Label>
-            <Input
-              id="add-acct-balance"
-              inputMode="numeric"
-              value={balance}
-              onChange={(e) => setBalance(e.target.value)}
-            />
           </div>
           <Button
             onClick={submit}

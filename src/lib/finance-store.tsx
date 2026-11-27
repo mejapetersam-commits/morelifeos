@@ -37,7 +37,7 @@ const defaultProfile: Profile = {
   investments: 0,
   debt: 0,
   vision: [],
-  onboarded: false,
+  onboarded: true,
 };
 
 const defaultState: FinanceState = {

@@ -3,6 +3,11 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "./db/client";
 import * as schema from "./db/schema";
 
+const previewOrigins = [
+  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
+  process.env.VERCEL_BRANCH_URL ? `https://${process.env.VERCEL_BRANCH_URL}` : undefined,
+].filter((origin): origin is string => Boolean(origin));
+
 export const auth = betterAuth({
   database: drizzleAdapter(db(), {
     provider: "pg",
@@ -21,5 +26,9 @@ export const auth = betterAuth({
     updateAge: 60 * 60 * 24,
   },
   secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL,
+  // Trust only the canonical app URL and exact Vercel-provided preview hosts.
+  trustedOrigins: [process.env.BETTER_AUTH_URL, ...previewOrigins].filter(
+    (origin): origin is string => Boolean(origin),
+  ),
+  baseURL: process.env.VERCEL_ENV === "preview" ? undefined : process.env.BETTER_AUTH_URL,
 });

@@ -9,7 +9,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/ai")({
   head: () => ({
     meta: [
-      { title: "Decision Support — FinanceOS" },
+      { title: "Decision Support | MoreLifeOS" },
       {
         name: "description",
         content: "Explainable financial intelligence. Observe, understand, decide.",
@@ -31,7 +31,7 @@ function AiPage() {
       <AppShell>
         <SectionHeader
           title="Decision support"
-          description="Not a chatbot. A quiet assistant that observes, explains, and offers options — you decide."
+          description="Not a chatbot. A quiet assistant that observes, explains, and offers options. You decide."
         />
 
         <div className="mb-8 grid gap-4 rounded-2xl bg-ocean p-6 text-ocean-foreground shadow-soft md:grid-cols-4">
@@ -58,13 +58,13 @@ function AiPage() {
           <div className="font-display text-base font-semibold text-foreground">How this works</div>
           <ul className="mt-3 space-y-2 leading-relaxed">
             <li>
-              • Every observation is derived from your recorded activity — nothing is invented.
+              • Every observation is derived from your recorded activity. Nothing is invented.
             </li>
             <li>
-              • Save any suggestion to your Inbox to act on later — nothing changes automatically,
+              • Save any suggestion to your Inbox to act on later. Nothing changes automatically,
               and doing nothing is a valid choice.
             </li>
-            <li>• FinanceOS avoids shame and never makes irreversible changes on your behalf.</li>
+            <li>• MoreLifeOS avoids shame and never makes irreversible changes on your behalf.</li>
           </ul>
         </div>
       </AppShell>

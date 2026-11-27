@@ -47,7 +47,7 @@ import {
 export const Route = createFileRoute("/investments")({
   head: () => ({
     meta: [
-      { title: "Investments & Savings | FinanceOS" },
+      { title: "Investments | MoreLifeOS" },
       {
         name: "description",
         content: "Track savings and investment accounts, returns, and projected growth.",
