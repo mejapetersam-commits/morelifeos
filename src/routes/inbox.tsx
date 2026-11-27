@@ -16,7 +16,7 @@ import { Archive, Trash2, Inbox as InboxIcon, ArrowRight } from "lucide-react";
 export const Route = createFileRoute("/inbox")({
   head: () => ({
     meta: [
-      { title: "Inbox | FinanceOS" },
+      { title: "Inbox | MoreLifeOS" },
       { name: "description", content: "Capture anything instantly, sort it out later." },
     ],
   }),
