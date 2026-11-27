@@ -45,7 +45,7 @@ function Home() {
         <DialogContent className="max-h-[85vh] overflow-y-auto rounded-3xl border-border/70 p-6 sm:max-w-xl">
           <DialogHeader>
             <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-sage/10 text-sage"><Target className="h-5 w-5" /></div>
-            <DialogTitle className="font-display text-2xl">Your 75-day consistency challenge</DialogTitle>
+            <DialogTitle className="font-display text-2xl">Your Consistency Challenge</DialogTitle>
             <DialogDescription className="leading-relaxed">A personal system built around the routines you want to sustain, not a copy of 75 Hard.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
@@ -120,7 +120,7 @@ function Home() {
             <div className="dashboard-card relative overflow-hidden rounded-[24px] bg-[#17233B] p-5 text-white shadow-soft md:p-6">
               <div className="absolute -right-8 -top-10 h-40 w-40 rounded-full border-[22px] border-white/5" />
               <div className="relative flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-bold tracking-tight"><Target className="h-4 w-4 text-[#A8D2BA]" /> 75-day challenge</div>
+                <div className="flex items-center gap-2 text-sm font-bold tracking-tight"><Target className="h-4 w-4 text-[#A8D2BA]" /> Consistency Challenge</div>
                 <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] text-white/75">Not started</span>
               </div>
               <div className="relative mt-6 flex items-end justify-between">
