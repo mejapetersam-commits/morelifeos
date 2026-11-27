@@ -40,7 +40,7 @@ import { Trash2, Plus, Pencil, Search, Repeat, AlertCircle } from "lucide-react"
 export const Route = createFileRoute("/money")({
   head: () => ({
     meta: [
-      { title: "Money — Accounts & Transactions | FinanceOS" },
+      { title: "Money | MoreLifeOS" },
       {
         name: "description",
         content: "Track your accounts and money movement with clarity.",
