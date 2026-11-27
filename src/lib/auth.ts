@@ -19,6 +19,10 @@ export const auth = betterAuth({
     // Add a verification email flow later if that's needed.
     requireEmailVerification: false,
   },
+  account: {
+    // Calendar refresh/access tokens are sensitive credentials; encrypt them in the auth database.
+    encryptOAuthTokens: true,
+  },
   session: {
     // 30-day sessions with a rolling refresh under 24h since this is a
     // personal finance app people expect to stay logged into.
