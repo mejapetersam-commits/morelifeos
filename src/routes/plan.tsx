@@ -6,7 +6,7 @@ import { CalendarDays, CheckSquare, Repeat2, Timer, ShieldCheck, Inbox, Clipboar
 export const Route = createFileRoute("/plan")({ component: Plan });
 
 const items = [
-  { title: "Google Calendar", description: "Primary calendar: mejapetersam@gmail.com. OAuth authorisation still needs to be configured in the app before events can sync.", icon: CalendarDays, status: "Connection setup required" },
+  { title: "Google Calendar", description: "Primary calendar selected. Google authorisation is still required before events can sync.", icon: CalendarDays, status: "Connection setup required" },
   { title: "Tasks", description: "A single place for actions, priorities and deadlines. A dedicated task manager is not implemented yet.", icon: CheckSquare, status: "Planned" },
   { title: "Routines", description: "Build repeatable daily and weekly routines without duplicating calendar events.", icon: Repeat2, status: "Planned" },
   { title: "Focus sessions", description: "Protect time for deep work and track the sessions you complete.", icon: Timer, status: "Planned" },
@@ -41,13 +41,8 @@ function Plan() {
           </div>
         ))}
       </div>
-      <div className="mt-6 rounded-2xl border border-border/70 bg-surface-elevated p-5">
-        <div className="flex items-center gap-2 text-sm font-semibold"><CalendarDays className="h-4 w-4 text-ocean" /> Primary calendar connection</div>
-        <p className="mt-2 text-sm text-muted-foreground">Google Calendar · mejapetersam@gmail.com</p>
-        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">The account is identified as your primary calendar. The app still needs Google OAuth client credentials and an authorised connection flow before it can read events. We will not display sample events as real calendar data.</p>
-      </div>
       <p className="mt-4 rounded-xl bg-accent/40 p-4 text-xs leading-relaxed text-muted-foreground">
-        Source-of-truth rule: Google Calendar holds the schedule. The 75-day challenge independently records whether selected challenge commitments were completed.
+        Google Calendar remains the schedule source of truth. The 75-day challenge will separately record completion of the commitments you choose.
       </p>
     </AppShell>
   );
