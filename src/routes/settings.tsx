@@ -78,7 +78,7 @@ function SettingsPage() {
       try {
         const parsed = JSON.parse(reader.result as string);
         if (!isValidFinanceState(parsed)) {
-          toast.error("That file doesn't look like a FinanceOS backup");
+          toast.error("That file doesn't look like a MoreLifeOS backup");
           return;
         }
         setPendingImport(parsed);
@@ -108,7 +108,7 @@ function SettingsPage() {
         <section className="rounded-2xl bg-surface-elevated p-6 shadow-soft">
           <h2 className="font-display text-base font-semibold">Appearance</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Choose how FinanceOS looks on this device.
+            Choose how MoreLifeOS looks on this device.
           </p>
           <div className="mt-4 grid grid-cols-3 gap-3">
             {themeOptions.map((opt) => {
@@ -171,8 +171,8 @@ function SettingsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Restore this backup?</AlertDialogTitle>
             <AlertDialogDescription>
-              This replaces everything currently in FinanceOS — accounts, transactions, goals, and
-              reviews — with the contents of the file you selected. This can't be undone.
+              This replaces everything currently in MoreLifeOS: accounts, transactions, goals, and
+              reviews, with the contents of the file you selected. This can't be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -194,7 +194,7 @@ function AccountSection() {
       <section className="rounded-2xl bg-surface-elevated p-6 shadow-soft">
         <h2 className="font-display text-base font-semibold">Account</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          You're using FinanceOS without an account — your data stays only in this browser. Log in
+          You're using MoreLifeOS without an account. Your data stays only in this browser. Log in
           to sync it across every device.
         </p>
         <Link
@@ -212,7 +212,7 @@ function AccountSection() {
       <h2 className="font-display text-base font-semibold">Account</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         Logged in as <span className="font-medium text-foreground">{session.user.email}</span>. Your
-        data syncs to the cloud —{" "}
+        data syncs to the cloud.{" "}
         {syncStatus === "syncing"
           ? "syncing now"
           : syncStatus === "error"
@@ -247,7 +247,7 @@ function DangerZone({ onReset }: { onReset: () => void }) {
           <div className="text-sm font-medium">Reset all data</div>
           <p className="mt-0.5 text-sm text-muted-foreground">
             Permanently deletes every account, transaction, goal, allocation, budget, recurring
-            rule, income record, review and inbox item — on this device and in the cloud. Your login
+            rule, income record, review and inbox item on this device and in the cloud. Your login
             stays intact.
           </p>
         </div>
@@ -262,7 +262,7 @@ function DangerZone({ onReset }: { onReset: () => void }) {
             <AlertDialogHeader>
               <AlertDialogTitle>Reset all financial data?</AlertDialogTitle>
               <AlertDialogDescription>
-                This wipes everything FinanceOS knows about your money and returns the app to a
+                This wipes everything MoreLifeOS knows about your money and returns the app to a
                 first-time state, including onboarding. It cannot be undone. Your account and login
                 are not affected.
               </AlertDialogDescription>
