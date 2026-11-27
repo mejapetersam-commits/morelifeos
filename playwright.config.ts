@@ -6,7 +6,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [["html", { open: "never" }], ["github"]] : "list",
   use: {
-    baseURL: process.env.QA_BASE_URL || "https://morelifeos.vercel.app",
+    baseURL: process.env.QA_BASE_URL || process.env.BASE_URL || "https://morelifeos.vercel.app",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
