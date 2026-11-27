@@ -27,7 +27,7 @@ async function getAccessToken(headers: Headers, googleAccount: typeof account.$i
 
 function isSameOrigin(request: Request) {
   const origin = request.headers.get("origin");
-  return !origin || new URL(origin).origin === new URL(request.url).origin;
+  return Boolean(origin) && new URL(origin!).origin === new URL(request.url).origin;
 }
 
 async function googleRequest(path: string, token: string, init?: RequestInit) {
@@ -76,7 +76,7 @@ export const Route = createFileRoute("/api/google-calendar")({
         try {
           const body = await request.json() as { summary?: string; description?: string; start?: { dateTime?: string; date?: string; timeZone?: string }; end?: { dateTime?: string; date?: string; timeZone?: string } };
           if (!body.summary?.trim() || !body.start || !body.end) return new Response("Event title, start and end are required.", { status: 400 });
-          const token = await getAccessToken(result.userId, result.googleAccount);
+          const token = await getAccessToken(request.headers, result.googleAccount);
           const event = await googleRequest("/calendars/primary/events", token, { method: "POST", body: JSON.stringify(body) });
           return Response.json({ event }, { status: 201 });
         } catch (error) {
