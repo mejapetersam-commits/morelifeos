@@ -320,3 +320,28 @@
     .interactive-card, .dashboard-card, .nav-3d { transition: none !important; }
   }
 }
+
+
+/* Shared emerald + ivory challenge surface */
+@layer components {
+  .glass-emerald-card {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border: 1px solid rgb(209 250 229 / 24%);
+    background:
+      radial-gradient(ellipse at 12% 0%, rgb(167 243 208 / 24%), transparent 52%),
+      linear-gradient(145deg, rgb(6 78 59 / 94%), rgb(4 55 43 / 96%) 58%, rgb(3 42 34 / 98%));
+    box-shadow: 0 14px 34px rgb(4 78 59 / 22%), inset 0 1px 0 rgb(255 255 255 / 22%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    backdrop-filter: blur(24px) saturate(150%);
+  }
+  .glass-emerald-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(118deg, rgb(255 255 255 / 10%), transparent 42%, rgb(167 243 208 / 7%));
+  }
+}

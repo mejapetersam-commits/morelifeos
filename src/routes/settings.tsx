@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { SectionHeader } from "@/components/finance-cards";
 import { useFinance } from "@/lib/finance-store";
 import { useTheme, type Theme } from "@/lib/theme";
-import { useSession, signOut } from "@/lib/auth-client";
+import { authClient, useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Sun, Moon, Laptop, Download, Upload, CheckCircle2, Trash2 } from "lucide-react";
+import { Sun, Moon, Laptop, Download, Upload, CheckCircle2, Trash2, CalendarDays, Mail } from "lucide-react";
 import { toast } from "sonner";
 import type { FinanceState } from "@/lib/finance-types";
 
@@ -103,6 +103,7 @@ function SettingsPage() {
       <div className="space-y-6">
         {/* Account */}
         <AccountSection />
+        <GoogleServicesSection />
 
         {/* Appearance */}
         <section className="rounded-2xl bg-surface-elevated p-6 shadow-soft">
@@ -182,6 +183,105 @@ function SettingsPage() {
         </AlertDialogContent>
       </AlertDialog>
     </AppShell>
+  );
+}
+
+
+function GoogleServicesSection() {
+  const [status, setStatus] = useState<{ configured: boolean; connected: boolean; loading: boolean }>({
+    configured: false, connected: false, loading: true,
+  });
+
+  async function refreshStatus() {
+    try {
+      const response = await fetch("/api/google-calendar");
+      if (!response.ok) throw new Error("Could not check Google connection.");
+      const data = await response.json() as { configured: boolean; connected: boolean };
+      setStatus({ ...data, loading: false });
+    } catch {
+      setStatus((current) => ({ ...current, loading: false }));
+    }
+  }
+
+  useEffect(() => { void refreshStatus(); }, []);
+
+  async function connectGoogle() {
+    try {
+      const result = await authClient.linkSocial({
+        provider: "google",
+        scopes: ["https://www.googleapis.com/auth/calendar.events.owned"],
+        callbackURL: "/settings?google=connected",
+        errorCallbackURL: "/settings?google=error",
+      });
+      if (result.error) toast.error(result.error.message || "Google connection could not start.");
+    } catch {
+      toast.error("Google connection could not start. Check your OAuth setup.");
+    }
+  }
+
+  async function disconnectGoogle() {
+    try {
+      const response = await fetch("/api/google-calendar", { method: "DELETE" });
+      if (!response.ok) throw new Error("Disconnect failed.");
+      toast.success("Google Calendar disconnected.");
+      await refreshStatus();
+    } catch {
+      toast.error("Could not disconnect Google Calendar.");
+    }
+  }
+
+  return (
+    <section className="rounded-2xl border border-emerald/15 bg-surface-elevated p-6 shadow-soft">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="font-display text-base font-semibold">Connected services</h2>
+          <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+            Give MoreLifeOS access only to the Google services you choose. Calendar access is separate from signing in.
+          </p>
+        </div>
+        <span className="rounded-full border border-emerald/20 bg-emerald/10 px-3 py-1 text-[10px] font-semibold text-emerald">Google workspace</span>
+      </div>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-2">
+        <div className="rounded-2xl border border-border/70 bg-background/55 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm font-semibold"><CalendarDays className="h-4 w-4 text-emerald" /> Google Calendar</div>
+            <span className={status.connected ? "rounded-full bg-emerald/10 px-2.5 py-1 text-[10px] font-semibold text-emerald" : "rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold text-muted-foreground"}>
+              {status.loading ? "Checking…" : status.connected ? "Connected" : "Not connected"}
+            </span>
+          </div>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            Read your events, create new ones, update details and reschedule from your Plan workspace.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {!status.connected ? (
+              <Button size="sm" onClick={connectGoogle} disabled={status.loading || !status.configured}>
+                {status.configured ? "Connect Google Calendar" : "OAuth setup required"}
+              </Button>
+            ) : (
+              <>
+                <Button size="sm" variant="outline" onClick={() => window.location.assign("/plan")}>Open Plan</Button>
+                <Button size="sm" variant="ghost" onClick={disconnectGoogle}>Disconnect</Button>
+              </>
+            )}
+          </div>
+          {!status.configured && <p className="mt-3 text-[11px] text-muted-foreground">Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Vercel before connecting.</p>}
+        </div>
+
+        <div className="rounded-2xl border border-border/70 bg-background/55 p-4 opacity-80">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm font-semibold"><Mail className="h-4 w-4 text-emerald" /> Gmail</div>
+            <span className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold text-muted-foreground">Phase 2</span>
+          </div>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            Email search, message reading and drafting will be added after Calendar. Sending will always require your confirmation.
+          </p>
+          <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
+            Gmail permissions are more sensitive and may require Google's app verification and, for restricted scopes, an independent security assessment.
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }
 

@@ -1,12 +1,163 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { SectionHeader } from "@/components/finance-cards";
 import { usePersonalOS, makeId, type PlanTask, type Routine } from "@/lib/personal-os-store";
-import { CalendarDays, CheckSquare, Repeat2, Timer, ShieldCheck, Plus, Trash2, ExternalLink } from "lucide-react";
+import { CalendarDays, CheckSquare, Repeat2, Timer, ShieldCheck, Plus, Trash2, RefreshCw, Pencil, X, Check } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/plan")({ component: Plan });
+
+
+type GoogleEvent = {
+  id: string;
+  summary?: string;
+  description?: string;
+  start?: { dateTime?: string; date?: string };
+  end?: { dateTime?: string; date?: string };
+};
+
+function toLocalInput(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  const offset = date.getTimezoneOffset();
+  return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 16);
+}
+
+function GoogleCalendarPanel() {
+  const [events, setEvents] = useState<GoogleEvent[]>([]);
+  const [connected, setConnected] = useState(false);
+  const [configured, setConfigured] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [title, setTitle] = useState("");
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
+
+  async function loadEvents() {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/google-calendar");
+      const data = await response.json() as { configured?: boolean; connected?: boolean; events?: { items?: GoogleEvent[] }; error?: string };
+      setConfigured(Boolean(data.configured));
+      setConnected(Boolean(data.connected));
+      setEvents(data.events?.items ?? []);
+      if (data.error) toast.error(data.error);
+    } catch {
+      toast.error("Could not load Google Calendar.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { void loadEvents(); }, []);
+
+  async function createEvent() {
+    if (!title.trim() || !start || !end) {
+      toast.error("Add an event title, start and end time.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const response = await fetch("/api/google-calendar", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          summary: title.trim(),
+          start: { dateTime: new Date(start).toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+          end: { dateTime: new Date(end).toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+        }),
+      });
+      if (!response.ok) throw new Error((await response.text()) || "Could not create event.");
+      setTitle("");
+      toast.success("Event added to Google Calendar.");
+      await loadEvents();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not create event.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveEdit(event: GoogleEvent) {
+    if (!editTitle.trim() || !editStart || !editEnd) return;
+    try {
+      const response = await fetch("/api/google-calendar", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ eventId: event.id, summary: editTitle.trim(), start: { dateTime: new Date(editStart).toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }, end: { dateTime: new Date(editEnd).toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone } }),
+      });
+      if (!response.ok) throw new Error((await response.text()) || "Could not update event.");
+      setEditing(null);
+      toast.success("Calendar event updated.");
+      await loadEvents();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update event.");
+    }
+  }
+
+  async function deleteEvent(event: GoogleEvent) {
+    if (!window.confirm(`Delete “${event.summary || "this event"}” from Google Calendar?`)) return;
+    try {
+      const response = await fetch(`/api/google-calendar?eventId=${encodeURIComponent(event.id)}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Could not delete event.");
+      toast.success("Event deleted.");
+      await loadEvents();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete event.");
+    }
+  }
+
+  return (
+    <section className="dashboard-card mb-5 rounded-2xl border border-border/70 bg-surface-elevated p-5 shadow-soft md:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 font-semibold"><CalendarDays className="h-4 w-4 text-emerald" /> Google Calendar</div>
+          <p className="mt-1 text-xs text-muted-foreground">Your live schedule. Changes here are written back to Google Calendar.</p>
+        </div>
+        <button onClick={() => void loadEvents()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-accent disabled:opacity-50"><RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh</button>
+      </div>
+
+      {!configured ? (
+        <p className="mt-4 rounded-xl bg-accent/60 p-4 text-xs text-muted-foreground">Google OAuth credentials are not configured yet. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Vercel, then connect Calendar in Settings.</p>
+      ) : !connected ? (
+        <p className="mt-4 rounded-xl bg-accent/60 p-4 text-xs text-muted-foreground">Connect your Google account in Settings to load and manage your events here.</p>
+      ) : (
+        <>
+          <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
+            <input aria-label="New event title" className="min-w-0 rounded-xl border border-input bg-background px-3 py-2.5 text-sm" placeholder="New event…" value={title} onChange={(e) => setTitle(e.target.value)} />
+            <input aria-label="Event start" type="datetime-local" className="min-w-0 rounded-xl border border-input bg-background px-3 py-2.5 text-xs" value={start} onChange={(e) => setStart(e.target.value)} />
+            <input aria-label="Event end" type="datetime-local" className="min-w-0 rounded-xl border border-input bg-background px-3 py-2.5 text-xs" value={end} onChange={(e) => setEnd(e.target.value)} />
+            <button onClick={() => void createEvent()} disabled={saving} className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald px-3 py-2.5 text-xs font-semibold text-white disabled:opacity-50"><Plus className="h-3.5 w-3.5" /> Add</button>
+          </div>
+          <div className="mt-4 divide-y divide-border/60">
+            {loading ? <p className="py-5 text-center text-xs text-muted-foreground">Loading events…</p> : events.length === 0 ? <p className="py-5 text-center text-xs text-muted-foreground">No upcoming events in the next seven days.</p> : events.map((event) => (
+              <div key={event.id} className="flex flex-wrap items-center gap-3 py-3">
+                <div className="min-w-0 flex-1">
+                  {editing === event.id ? (
+                    <div className="flex gap-2">
+                      <input autoFocus className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2.5 py-1.5 text-sm" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+                      <button aria-label="Save event title" onClick={() => void saveEdit(event)} className="text-emerald"><Check className="h-4 w-4" /></button>
+                      <button aria-label="Cancel edit" onClick={() => setEditing(null)} className="text-muted-foreground"><X className="h-4 w-4" /></button>
+                    </div>
+                  ) : (
+                    <div className="truncate text-sm font-semibold">{event.summary || "(Untitled event)"}</div>
+                  )}
+                  <div className="mt-1 text-[11px] text-muted-foreground">{event.start?.dateTime ? new Date(event.start.dateTime).toLocaleString() : event.start?.date || "Time not set"}</div>
+                </div>
+                {editing !== event.id && <div className="flex items-center gap-2"><button aria-label="Edit event" onClick={() => { setEditing(event.id); setEditTitle(event.summary || ""); setEditStart(toLocalInput(event.start?.dateTime)); setEditEnd(toLocalInput(event.end?.dateTime)); }} className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground"><Pencil className="h-3.5 w-3.5" /></button><button aria-label="Delete event" onClick={() => void deleteEvent(event)} className="rounded-lg p-2 text-muted-foreground hover:bg-coral/10 hover:text-coral"><Trash2 className="h-3.5 w-3.5" /></button></div>}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
 
 function Plan() {
   const { data, setData, loaded } = usePersonalOS();
@@ -39,21 +190,7 @@ function Plan() {
   return (
     <AppShell>
       <SectionHeader title="Plan" description="Your editable workspace for tasks, routines, focus and consistency." />
-      <section className="mb-5 rounded-2xl border border-border bg-surface-elevated p-5 shadow-soft">
-        <div className="flex items-center gap-2 font-semibold"><CalendarDays className="h-4 w-4 text-emerald" /> Calendar setup</div>
-        <p className="mt-1 text-sm text-muted-foreground">Add your Google Calendar embed link to view your schedule inside MoreLifeOS. This is a view only connection. It does not sync edits or create events.</p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <label className="text-xs font-medium">Calendar name<input className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm" value={data.calendar.label} onChange={(e) => update({ calendar: { ...data.calendar, label: e.target.value } })} /></label>
-          <label className="text-xs font-medium">Time zone<input className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm" value={data.calendar.timezone} onChange={(e) => update({ calendar: { ...data.calendar, timezone: e.target.value } })} placeholder="Africa/Nairobi" /></label>
-        </div>
-        <label className="mt-3 block text-xs font-medium">Google Calendar embed URL<input className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm" value={data.calendar.embedUrl} onChange={(e) => update({ calendar: { ...data.calendar, embedUrl: e.target.value } })} placeholder="https://calendar.google.com/calendar/embed?..." /></label>
-        <div className="mt-3 flex flex-wrap items-center gap-3"><a href="https://calendar.google.com/calendar/u/0/r/settings" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-semibold text-emerald">Find your embed link <ExternalLink className="h-3 w-3" /></a><span className="text-xs text-muted-foreground">Google Calendar settings → your calendar → Integrate calendar → Embed code.</span></div>
-        {data.calendar.embedUrl && (
-          data.calendar.embedUrl.startsWith("https://calendar.google.com/calendar/embed") ?
-            <div className="mt-4 overflow-hidden rounded-xl border border-border"><iframe title={data.calendar.label || "Google Calendar"} src={data.calendar.embedUrl} className="h-[520px] w-full" loading="lazy" /></div> :
-            <p className="mt-3 text-xs text-coral">Please use the Google Calendar embed URL beginning with https://calendar.google.com/calendar/embed.</p>
-        )}
-      </section>
+      <GoogleCalendarPanel />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="rounded-2xl border border-border bg-surface-elevated p-5 shadow-soft">

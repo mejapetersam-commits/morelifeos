@@ -117,10 +117,10 @@ function Home() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            <div className="dashboard-card relative overflow-hidden rounded-[24px] bg-[#17233B] p-5 text-white shadow-soft md:p-6">
+            <div className="dashboard-card relative overflow-hidden rounded-[24px] glass-emerald-card p-5 text-white shadow-soft md:p-6">
               <div className="absolute -right-8 -top-10 h-40 w-40 rounded-full border-[22px] border-white/5" />
               <div className="relative flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-bold tracking-tight"><Target className="h-4 w-4 text-[#A8D2BA]" /> Consistency Challenge</div>
+                <div className="flex items-center gap-2 text-sm font-bold tracking-tight"><Target className="h-4 w-4 text-emerald-100" /> Consistency Challenge</div>
                 <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] text-white/75">Not started</span>
               </div>
               <div className="relative mt-6 flex items-end justify-between">
@@ -130,8 +130,8 @@ function Home() {
                 </div>
                 <div className="flex h-14 w-14 items-center justify-center rounded-full border-[5px] border-white/15 text-[10px] font-semibold text-white/70">Not active</div>
               </div>
-              <div className="relative mt-5 h-2 overflow-hidden rounded-full bg-white/15"><div className="h-full w-0 rounded-full bg-[#B8C5FF]" /></div>
-              <button onClick={() => setChallengeOpen(true)} className="relative mt-5 inline-flex items-center gap-1.5 rounded-lg text-xs font-semibold text-[#D8DEFF] transition hover:translate-x-1 hover:text-white">Explore challenge <ArrowRight className="h-3 w-3" /></button>
+              <div className="relative mt-5 h-2 overflow-hidden rounded-full bg-white/15"><div className="h-full w-0 rounded-full bg-emerald-200" /></div>
+              <button onClick={() => setChallengeOpen(true)} className="relative mt-5 inline-flex items-center gap-1.5 rounded-lg text-xs font-semibold text-emerald-100 transition hover:translate-x-1 hover:text-white">Explore challenge <ArrowRight className="h-3 w-3" /></button>
             </div>
 
             <div className="rounded-[24px] border border-border/80 bg-surface-elevated p-5 shadow-soft md:p-6">
